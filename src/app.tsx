@@ -515,9 +515,9 @@ function Header() {
   )
 }
 
-export function App() {
+export function App({ url }: { url?: string }) {
   return (
-    <LocationProvider>
+    <LocationProvider url={url}>
       <Header />
       <Router>
         <Route path="/supernova-image/" component={Home} />
