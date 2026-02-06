@@ -275,6 +275,8 @@ body {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 50vh;
+  object-fit: contain;
   position: relative;
   z-index: 1;
 }
