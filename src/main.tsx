@@ -13,7 +13,7 @@ if (typeof window !== 'undefined') {
   hydrate(<App />, document.getElementById('app')!)
 }
 
-export async function prerender(data: { url: string }) {
+export async function prerender(_data: { url: string }) {
   startHeadCollection()
   const result = await prerenderIso(<App />)
   const head = flushHead()

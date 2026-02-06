@@ -11,7 +11,6 @@
   --font-display: 'Unbounded', system-ui, sans-serif;
   --font-body: 'Outfit', system-ui, sans-serif;
 
-  /* New variables */
   --radius-lg: 16px;
   --radius-md: 12px;
   --radius-sm: 8px;
@@ -600,8 +599,6 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
   color: var(--text-muted);
-  background: none;
-  border: none;
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -629,8 +626,6 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
   color: var(--text-muted);
-  background: none;
-  border: none;
   cursor: pointer;
   padding: 0;
   margin-bottom: 2rem;
@@ -689,10 +684,6 @@ body {
   padding-bottom: 1.25rem;
 }
 
-.how-section--visual {
-  padding: 1.75rem;
-}
-
 .how-section h2 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -722,7 +713,6 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0;
   margin: 1rem 0;
   overflow-x: auto;
   padding-bottom: 0.25rem;
@@ -819,25 +809,6 @@ body {
 .how-split__text {
   flex: 1;
   min-width: 0;
-}
-
-.how-split__text h2 {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--text);
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.01em;
-}
-
-.how-split__text p {
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.65;
-}
-
-.how-split__text p + p {
-  margin-top: 0.5rem;
 }
 
 .how-split__visual {
@@ -978,10 +949,6 @@ body {
   }
 
   .how-section {
-    padding: 1.25rem 1rem;
-  }
-
-  .how-section--visual {
     padding: 1.25rem 1rem;
   }
 

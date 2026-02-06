@@ -1,3 +1,4 @@
+import { Fragment } from 'preact'
 import { useState, useRef, useCallback } from 'preact/hooks'
 import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
 import { useHead } from './lib/use-head'
@@ -17,17 +18,17 @@ function rangeBackground(value: number, min: number, max: number): string {
 
 function PipelineFlow() {
   const stages = [
-    { label: 'sRGB', sub: '8-bit', accent: false },
-    { label: 'Linearize', sub: 'γ 2.4 decode', accent: false },
-    { label: 'Boost', sub: 'HDR luminance', accent: false },
-    { label: 'PQ Encode', sub: 'ST 2084', accent: false },
-    { label: 'HDR PNG', sub: '16-bit', accent: true },
+    { label: 'sRGB', sub: '8-bit' },
+    { label: 'Linearize', sub: 'γ 2.4 decode' },
+    { label: 'Boost', sub: 'HDR luminance' },
+    { label: 'PQ Encode', sub: 'ST 2084' },
+    { label: 'HDR PNG', sub: '16-bit' },
   ]
   return (
     <div class="pipeline-flow" role="img" aria-label="Conversion pipeline: sRGB 8-bit to Linearize to Boost to PQ Encode to HDR PNG 16-bit">
       {stages.map((s, i) => (
-        <>
-          <div class={`pipeline-stage${i === 0 ? ' pipeline-stage--input' : ''}${s.accent ? ' pipeline-stage--output' : ''}`}>
+        <Fragment key={i}>
+          <div class={`pipeline-stage${i === 0 ? ' pipeline-stage--input' : ''}${i === stages.length - 1 ? ' pipeline-stage--output' : ''}`}>
             <span class="pipeline-stage__label">{s.label}</span>
             <span class="pipeline-stage__sub">{s.sub}</span>
           </div>
@@ -38,7 +39,7 @@ function PipelineFlow() {
               </svg>
             </div>
           )}
-        </>
+        </Fragment>
       ))}
     </div>
   )

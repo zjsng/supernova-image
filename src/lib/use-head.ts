@@ -7,13 +7,13 @@ interface HeadElement {
 
 interface HeadData {
   title: string
-  elements: Set<HeadElement>
+  elements: HeadElement[]
 }
 
 let ssrHead: HeadData | null = null
 
 export function startHeadCollection(): void {
-  ssrHead = { title: '', elements: new Set() }
+  ssrHead = { title: '', elements: [] }
 }
 
 export function flushHead(): HeadData | null {
@@ -29,13 +29,13 @@ export function useHead(title: string, description: string, canonicalPath: strin
 
   if (ssrHead) {
     ssrHead.title = title
-    ssrHead.elements.add({ type: 'meta', props: { name: 'description', content: description } })
-    ssrHead.elements.add({ type: 'link', props: { rel: 'canonical', href: canonicalUrl } })
-    ssrHead.elements.add({ type: 'meta', props: { property: 'og:title', content: title } })
-    ssrHead.elements.add({ type: 'meta', props: { property: 'og:description', content: description } })
-    ssrHead.elements.add({ type: 'meta', props: { property: 'og:url', content: canonicalUrl } })
-    ssrHead.elements.add({ type: 'meta', props: { name: 'twitter:title', content: title } })
-    ssrHead.elements.add({ type: 'meta', props: { name: 'twitter:description', content: description } })
+    ssrHead.elements.push({ type: 'meta', props: { name: 'description', content: description } })
+    ssrHead.elements.push({ type: 'link', props: { rel: 'canonical', href: canonicalUrl } })
+    ssrHead.elements.push({ type: 'meta', props: { property: 'og:title', content: title } })
+    ssrHead.elements.push({ type: 'meta', props: { property: 'og:description', content: description } })
+    ssrHead.elements.push({ type: 'meta', props: { property: 'og:url', content: canonicalUrl } })
+    ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:title', content: title } })
+    ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:description', content: description } })
     return
   }
 

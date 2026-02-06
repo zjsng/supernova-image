@@ -14,6 +14,8 @@
 
 import { getICCProfileBytes } from './icc-profile'
 
+const textEncoder = new TextEncoder()
+
 async function deflate(data: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream('deflate')
   const writer = cs.writable.getWriter()
@@ -63,7 +65,7 @@ function crc32(buf: Uint8Array): number {
  * The CRC covers the type + data (not the length field).
  */
 function makeChunk(type: string, data: Uint8Array): Uint8Array {
-  const typeBytes = new TextEncoder().encode(type)
+  const typeBytes = textEncoder.encode(type)
   const len = data.length
   const chunk = new Uint8Array(4 + 4 + len + 4)
   const view = new DataView(chunk.buffer)
@@ -72,11 +74,8 @@ function makeChunk(type: string, data: Uint8Array): Uint8Array {
   chunk.set(typeBytes, 4)
   chunk.set(data, 8)
 
-  // CRC over type + data
-  const crcData = new Uint8Array(4 + len)
-  crcData.set(typeBytes, 0)
-  crcData.set(data, 4)
-  view.setUint32(8 + len, crc32(crcData))
+  // CRC over type + data (already in chunk at offsets 4..8+len)
+  view.setUint32(8 + len, crc32(chunk.subarray(4, 8 + len)))
 
   return chunk
 }
@@ -140,7 +139,7 @@ function makeCHRM(): Uint8Array {
 async function makeICCP(): Promise<Uint8Array> {
   const profileBytes = getICCProfileBytes()
   const compressed = await deflate(profileBytes)
-  const name = new TextEncoder().encode('Rec2020-PQ')
+  const name = textEncoder.encode('Rec2020-PQ')
   // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
   const data = new Uint8Array(name.length + 2 + compressed.length)
   data.set(name, 0)
