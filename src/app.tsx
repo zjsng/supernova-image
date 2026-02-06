@@ -147,6 +147,37 @@ function GamutSVG() {
   )
 }
 
+function BrowserCompat() {
+  const browsers = [
+    { name: 'Chrome', engine: 'cICP', status: 'full' as const, note: 'Full HDR rendering' },
+    { name: 'Edge', engine: 'cICP', status: 'full' as const, note: 'Full HDR rendering' },
+    { name: 'Safari', engine: 'ICC / EDR', status: 'partial' as const, note: 'macOS only' },
+    { name: 'Firefox', engine: '—', status: 'none' as const, note: 'No extended brightness' },
+  ]
+  return (
+    <div class="compat-grid" role="list" aria-label="Browser HDR support">
+      {browsers.map((b) => (
+        <div class={`compat-card compat-card--${b.status}`} role="listitem" key={b.name}>
+          <div class="compat-card__status" aria-hidden="true">
+            {b.status === 'full' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            )}
+            {b.status === 'partial' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
+            )}
+            {b.status === 'none' && (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+            )}
+          </div>
+          <span class="compat-card__name">{b.name}</span>
+          <span class="compat-card__engine">{b.engine}</span>
+          <span class="compat-card__note">{b.note}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function HowItWorks() {
   useHead(
     'How It Works \u2014 Supernova HDR PNG Converter',
@@ -221,17 +252,18 @@ function HowItWorks() {
         </div>
       </section>
 
-      {/* Compatibility + Privacy — bento grid */}
-      <div class="how-bento">
-        <section class="how-section how-bento__wide">
-          <h2>Compatibility</h2>
-          <p>Requires an HDR display and a supported browser. Chrome and Edge render HDR PNGs via cICP. Safari on macOS uses the ICC profile for EDR. Firefox doesn't yet support extended brightness. On SDR displays, the image renders as a normal PNG.</p>
-        </section>
-        <section class="how-section how-bento__narrow">
-          <h2>Privacy</h2>
-          <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
-        </section>
-      </div>
+      {/* Compatibility — full-width with browser grid */}
+      <section class="how-section">
+        <h2>Compatibility</h2>
+        <p>Requires an HDR display and a supported browser. On SDR displays, the image renders as a normal PNG.</p>
+        <BrowserCompat />
+      </section>
+
+      {/* Privacy */}
+      <section class="how-section">
+        <h2>Privacy</h2>
+        <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
+      </section>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
