@@ -12,8 +12,27 @@
  * PNG spec: https://www.w3.org/TR/png/
  */
 
-import { deflate } from 'pako'
 import { getICCProfileBytes } from './icc-profile'
+
+async function deflate(data: Uint8Array): Promise<Uint8Array> {
+  const cs = new CompressionStream('deflate')
+  const writer = cs.writable.getWriter()
+  writer.write(data)
+  writer.close()
+  const chunks: Uint8Array[] = []
+  const reader = cs.readable.getReader()
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    chunks.push(value)
+  }
+  let len = 0
+  for (const c of chunks) len += c.length
+  const result = new Uint8Array(len)
+  let off = 0
+  for (const c of chunks) { result.set(c, off); off += c.length }
+  return result
+}
 
 // 8-byte PNG file signature — identifies the file as PNG and detects transmission errors
 const PNG_SIGNATURE = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10])
@@ -118,9 +137,9 @@ function makeCHRM(): Uint8Array {
  * (some image editors, older software) fall back to this ICC profile to still
  * render colors correctly. The profile is deflate-compressed per PNG spec.
  */
-function makeICCP(): Uint8Array {
+async function makeICCP(): Promise<Uint8Array> {
   const profileBytes = getICCProfileBytes()
-  const compressed = deflate(profileBytes)
+  const compressed = await deflate(profileBytes)
   const name = new TextEncoder().encode('Rec2020-PQ')
   // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
   const data = new Uint8Array(name.length + 2 + compressed.length)
@@ -138,7 +157,7 @@ function makeICCP(): Uint8Array {
  * So each pixel is 6 bytes (2 bytes × 3 channels), and each row has a leading
  * filter byte. The entire block is then deflate-compressed.
  */
-function makeIDAT(width: number, height: number, pqPixels: Uint16Array): Uint8Array {
+async function makeIDAT(width: number, height: number, pqPixels: Uint16Array): Promise<Uint8Array> {
   const rowBytes = 1 + width * 6 // 1 filter byte + 3 channels × 2 bytes per pixel
   const raw = new Uint8Array(height * rowBytes)
 
@@ -159,7 +178,7 @@ function makeIDAT(width: number, height: number, pqPixels: Uint16Array): Uint8Ar
     }
   }
 
-  const compressed = deflate(raw)
+  const compressed = await deflate(raw)
   return makeChunk('IDAT', compressed)
 }
 
@@ -186,13 +205,13 @@ function makeIEND(): Uint8Array {
  * @param {Uint16Array} pqPixels - RGB16 pixel data (3 values per pixel)
  * @returns {Uint8Array} Complete PNG file as a byte array
  */
-export function encodePNG(width: number, height: number, pqPixels: Uint16Array): Uint8Array {
+export async function encodePNG(width: number, height: number, pqPixels: Uint16Array): Promise<Uint8Array> {
   const chunks = [
     makeIHDR(width, height),  // image header
     makeCICP(),               // HDR color info (primary signal)
     makeCHRM(),               // chromaticity (legacy fallback)
-    makeICCP(),               // ICC profile (compatibility fallback)
-    makeIDAT(width, height, pqPixels), // pixel data
+    await makeICCP(),         // ICC profile (compatibility fallback)
+    await makeIDAT(width, height, pqPixels), // pixel data
     makeIEND(),               // end marker
   ]
 

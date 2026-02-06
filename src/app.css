@@ -128,12 +128,18 @@ body {
   transition: opacity var(--transition-base);
 }
 
-.drop-zone:hover::before {
+.drop-zone:hover::before,
+.drop-zone:focus-visible::before {
   border-color: var(--accent);
 }
 
-.drop-zone:hover::after {
+.drop-zone:hover::after,
+.drop-zone:focus-visible::after {
   opacity: 1;
+}
+
+.drop-zone:focus-visible {
+  outline: none;
 }
 
 .drop-zone.dragover::before {

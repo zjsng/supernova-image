@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from 'preact/hooks'
-import { LocationProvider, Router, Route } from 'preact-iso'
-import { processPixels } from './lib/pq'
-import { encodePNG } from './lib/encode-png'
+import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
+import { useHead } from './lib/use-head'
 
 interface ImageState {
   src: string
@@ -17,10 +16,14 @@ function rangeBackground(value: number, min: number, max: number): string {
 }
 
 function HowItWorks() {
+  useHead(
+    'How It Works \u2014 Supernova HDR PNG Converter',
+    'Learn how Supernova converts standard images to HDR PNGs using PQ (ST 2084) transfer and Rec.2020 gamut.'
+  )
   return (
     <div class="how-it-works">
       <a class="how-back-link" href="/supernova-image/">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5m0 0l7 7m-7-7l7-7" />
         </svg>
         Back
@@ -84,6 +87,10 @@ function HowItWorks() {
 }
 
 function Home() {
+  useHead(
+    'Supernova \u2014 HDR PNG Converter',
+    'Convert any image to HDR PNG in your browser. Free, private, no uploads. PQ (ST 2084) transfer with Rec.2020 gamut for HDR10-compatible output.'
+  )
   const [image, setImage] = useState<ImageState | null>(null)
   const [boost, setBoost] = useState(4)
   const [gamma, setGamma] = useState(1.0)
@@ -136,10 +143,6 @@ function Home() {
     if (!image) return
     setProcessing(true)
 
-    // Defer to next frame so UI updates
-    await new Promise(r => requestAnimationFrame(r))
-    await new Promise(r => setTimeout(r, 50))
-
     try {
       const { el, width, height, name } = image
       const canvas = canvasRef.current!
@@ -149,10 +152,28 @@ function Home() {
       ctx.drawImage(el, 0, 0)
       const imageData = ctx.getImageData(0, 0, width, height)
 
-      const pqPixels = processPixels(imageData, boost, gamma)
-      const pngData = encodePNG(width, height, pqPixels)
+      const worker = new Worker(
+        new URL('./lib/worker.ts', import.meta.url),
+        { type: 'module' }
+      )
 
-      const blob = new Blob([pngData as BlobPart], { type: 'image/png' })
+      const pngData = await new Promise<Uint8Array>((resolve, reject) => {
+        worker.onmessage = (e: MessageEvent) => {
+          resolve(e.data)
+          worker.terminate()
+        }
+        worker.onerror = (e) => {
+          reject(e)
+          worker.terminate()
+        }
+        const pixels = imageData.data
+        worker.postMessage(
+          { pixels, width, height, boost, gamma },
+          [pixels.buffer]
+        )
+      })
+
+      const blob = new Blob([pngData], { type: 'image/png' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       const stem = name.replace(/\.[^.]+$/, '')
@@ -167,18 +188,25 @@ function Home() {
 
   return (
     <>
-      <a class="how-link" href="/supernova-image/how-it-works">How it works</a>
-
       {!image ? (
         <div
           class={`drop-zone ${dragover ? 'dragover' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-label="Upload an image"
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onClick={handleClick}
+          onKeyDown={(e: KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleClick()
+            }
+          }}
         >
           <div class="drop-zone__prompt">
-            <svg viewBox="0 0 48 48" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 48 48" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M24 32V16m0 0l-8 8m8-8l8 8" />
               <rect x="6" y="6" width="36" height="36" rx="4" />
             </svg>
@@ -206,8 +234,9 @@ function Home() {
         <>
           <div class="controls">
             <div class="control-group">
-              <label>Boost</label>
+              <label htmlFor="boost-range">Boost</label>
               <input
+                id="boost-range"
                 type="range"
                 min="1"
                 max="10"
@@ -219,8 +248,9 @@ function Home() {
               <span class="value">{boost.toFixed(1)}</span>
             </div>
             <div class="control-group">
-              <label>Gamma</label>
+              <label htmlFor="gamma-range">Gamma</label>
               <input
+                id="gamma-range"
                 type="range"
                 min="0.1"
                 max="3.0"
@@ -249,7 +279,7 @@ function Home() {
       )}
 
       <footer class="trust-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
           <path d="M9 12l2 2 4-4" />
         </svg>
@@ -259,13 +289,22 @@ function Home() {
   )
 }
 
+function Header() {
+  const { path } = useLocation()
+  const isHome = path === '/' || path === '/supernova-image' || path === '/supernova-image/'
+  return (
+    <div class="header">
+      <h1>Supernova</h1>
+      <p>Convert any image to <span class="accent">HDR PNG</span> — runs entirely in your browser</p>
+      {isHome && <a class="how-link" href="/supernova-image/how-it-works">How it works</a>}
+    </div>
+  )
+}
+
 export function App() {
   return (
     <LocationProvider>
-      <div class="header">
-        <h1>Supernova</h1>
-        <p>Convert any image to <span class="accent">HDR PNG</span> — runs entirely in your browser</p>
-      </div>
+      <Header />
       <Router>
         <Route path="/supernova-image/" component={Home} />
         <Route path="/supernova-image/how-it-works" component={HowItWorks} />

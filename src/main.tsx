@@ -1,5 +1,11 @@
 import { hydrate, prerender as prerenderIso } from 'preact-iso'
 import { App } from './app'
+import '@fontsource/unbounded/latin-600.css'
+import '@fontsource/unbounded/latin-700.css'
+import '@fontsource/unbounded/latin-800.css'
+import '@fontsource/outfit/latin-400.css'
+import '@fontsource/outfit/latin-500.css'
+import '@fontsource/outfit/latin-600.css'
 import './app.css'
 
 if (typeof window !== 'undefined') {
