@@ -1,5 +1,6 @@
 import { hydrate, prerender as prerenderIso } from 'preact-iso'
 import { App } from './app'
+import { startHeadCollection, flushHead } from './lib/use-head'
 import '@fontsource/unbounded/latin-600.css'
 import '@fontsource/unbounded/latin-700.css'
 import '@fontsource/unbounded/latin-800.css'
@@ -13,5 +14,8 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender(data: { url: string }) {
-  return prerenderIso(<App />)
+  startHeadCollection()
+  const result = await prerenderIso(<App />)
+  const head = flushHead()
+  return { ...result, head }
 }

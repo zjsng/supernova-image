@@ -15,10 +15,142 @@ function rangeBackground(value: number, min: number, max: number): string {
   return `linear-gradient(90deg, var(--accent) 0%, var(--accent-light) ${pct}%, var(--border) ${pct}%)`
 }
 
+function PipelineFlow() {
+  const stages = [
+    { label: 'sRGB', sub: '8-bit', accent: false },
+    { label: 'Linearize', sub: 'γ 2.4 decode', accent: false },
+    { label: 'Boost', sub: 'HDR luminance', accent: false },
+    { label: 'PQ Encode', sub: 'ST 2084', accent: false },
+    { label: 'HDR PNG', sub: '16-bit', accent: true },
+  ]
+  return (
+    <div class="pipeline-flow" role="img" aria-label="Conversion pipeline: sRGB 8-bit to Linearize to Boost to PQ Encode to HDR PNG 16-bit">
+      {stages.map((s, i) => (
+        <>
+          <div class={`pipeline-stage${i === 0 ? ' pipeline-stage--input' : ''}${s.accent ? ' pipeline-stage--output' : ''}`}>
+            <span class="pipeline-stage__label">{s.label}</span>
+            <span class="pipeline-stage__sub">{s.sub}</span>
+          </div>
+          {i < stages.length - 1 && (
+            <div class="pipeline-arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14m0 0l-4-4m4 4l-4 4" />
+              </svg>
+            </div>
+          )}
+        </>
+      ))}
+    </div>
+  )
+}
+
+function PQCurveSVG() {
+  return (
+    <svg class="pq-curve-svg" viewBox="0 0 300 240" role="img" aria-label="Chart comparing PQ and Gamma 2.2 transfer curves">
+      <defs>
+        <linearGradient id="pq-grad" x1="0" y1="1" x2="1" y2="0">
+          <stop offset="0%" stop-color="var(--accent)" />
+          <stop offset="100%" stop-color="var(--accent-light)" />
+        </linearGradient>
+      </defs>
+      {/* Grid lines */}
+      <line x1="50" y1="205" x2="280" y2="205" stroke="var(--border)" stroke-width="0.5" />
+      <line x1="50" y1="157.5" x2="280" y2="157.5" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,4" />
+      <line x1="50" y1="110" x2="280" y2="110" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,4" />
+      <line x1="50" y1="62.5" x2="280" y2="62.5" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="2,4" />
+      <line x1="50" y1="15" x2="280" y2="15" stroke="var(--border)" stroke-width="0.5" />
+      <line x1="50" y1="15" x2="50" y2="205" stroke="var(--border)" stroke-width="0.5" />
+      <line x1="280" y1="15" x2="280" y2="205" stroke="var(--border)" stroke-width="0.5" />
+      {/* Gamma 2.2 curve — dashed, muted */}
+      <path
+        d="M50.0,205.0L59.6,160.2L69.2,143.6L78.8,131.2L88.3,120.9L97.9,111.9L107.5,103.8L117.1,96.5L126.7,89.7L136.3,83.3L145.8,77.4L155.4,71.7L165.0,66.3L174.6,61.2L184.2,56.3L193.8,51.5L203.3,47.0L212.9,42.6L222.5,38.3L232.1,34.1L241.7,30.1L251.3,26.2L260.8,22.4L270.4,18.6L280.0,15.0"
+        fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"
+      />
+      {/* PQ curve — solid, accent gradient */}
+      <path
+        d="M50.0,205.0L57.7,84.7L65.3,70.5L73.0,62.2L80.7,56.2L88.3,51.6L96.0,47.8L103.7,44.6L111.3,41.8L119.0,39.4L126.7,37.3L134.3,35.3L142.0,33.5L149.7,31.9L157.3,30.4L165.0,29.0L172.7,27.6L180.3,26.4L188.0,25.3L195.7,24.2L203.3,23.1L211.0,22.1L218.7,21.2L226.3,20.3L234.0,19.5L241.7,18.6L249.3,17.9L257.0,17.1L264.7,16.4L272.3,15.7L280.0,15.0"
+        fill="none" stroke="url(#pq-grad)" stroke-width="2.5" stroke-linecap="round"
+      />
+      {/* Curve labels */}
+      <text x="230" y="46" fill="var(--text-muted)" font-size="10" font-family="var(--font-body)" opacity="0.7">γ 2.2</text>
+      <text x="170" y="22" fill="var(--accent)" font-size="10" font-family="var(--font-body)" font-weight="600">PQ</text>
+      {/* Axis labels */}
+      <text x="165" y="225" fill="var(--text-muted)" font-size="9" font-family="var(--font-body)" text-anchor="middle" opacity="0.6">Linear light</text>
+      <text x="22" y="115" fill="var(--text-muted)" font-size="9" font-family="var(--font-body)" text-anchor="middle" transform="rotate(-90,22,115)" opacity="0.6">Encoded signal</text>
+      {/* Axis tick labels */}
+      <text x="50" y="217" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="middle" opacity="0.5">0</text>
+      <text x="280" y="217" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="middle" opacity="0.5">1</text>
+      <text x="44" y="208" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="end" opacity="0.5">0</text>
+      <text x="44" y="18" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="end" opacity="0.5">1</text>
+    </svg>
+  )
+}
+
+function NitsScale() {
+  const levels = [
+    { nits: 100,   pct: '1%',   label: 'SDR white',    accent: false },
+    { nits: 203,   pct: '2%',   label: 'HDR ref white', accent: true },
+    { nits: 1000,  pct: '10%',  label: 'HDR highlight', accent: true },
+    { nits: 10000, pct: '100%', label: 'PQ maximum',    accent: true },
+  ]
+  return (
+    <div class="nits-scale" role="img" aria-label="Luminance scale showing SDR range (0-100 nits) versus HDR range (up to 10,000 nits)">
+      {levels.map((l) => (
+        <div class={`nits-row${l.accent ? ' nits-row--accent' : ''}`}>
+          <span class="nits-row-val">{l.nits.toLocaleString()}</span>
+          <div class="nits-row-track">
+            <div class="nits-row-fill" style={{ width: l.pct }} />
+          </div>
+          <span class="nits-row-label">{l.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function GamutSVG() {
+  return (
+    <svg class="gamut-svg" viewBox="0 0 260 240" role="img" aria-label="CIE 1931 chromaticity diagram showing sRGB and BT.2020 color gamuts">
+      <defs>
+        <linearGradient id="gamut-fill" x1="0" y1="1" x2="0.5" y2="0">
+          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.03" />
+          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.08" />
+        </linearGradient>
+      </defs>
+      {/* Horseshoe outline */}
+      <path
+        d="M68.1,218.8L67.8,218.8L67.8,217.7L67.0,216.0L64.0,213.7L59.6,209.3L54.1,200.9L50.0,189.2L45.0,180.6L38.7,165.6L32.4,151.2L26.3,136.2L22.2,122.0L21.1,108.0L23.3,94.0L27.4,83.0L38.2,69.0L50.3,56.7L65.7,45.9L82.7,38.0L103.3,31.5L122.3,29.8L142.1,33.1L162.7,39.2L181.1,47.6L196.0,56.7L209.2,67.4L218.0,77.2L222.1,87.0L222.1,96.3L221.8,103.3L221.8,112.7L222.1,123.2L68.1,218.8"
+        fill="none" stroke="var(--border)" stroke-width="1" opacity="0.5"
+      />
+      {/* BT.2020 triangle */}
+      <path
+        d="M214.7,151.9L66.8,34.0L56.0,209.3Z"
+        fill="url(#gamut-fill)" stroke="var(--accent)" stroke-width="1.5" opacity="0.9"
+      />
+      {/* sRGB triangle */}
+      <path
+        d="M196.0,143.0L102.5,80.0L61.2,206.0Z"
+        fill="none" stroke="var(--text-muted)" stroke-width="1.2" stroke-dasharray="5,4" opacity="0.5"
+      />
+      {/* Labels */}
+      <text x="220" y="148" fill="var(--accent)" font-size="9" font-family="var(--font-body)" font-weight="600">R</text>
+      <text x="56" y="29" fill="var(--accent)" font-size="9" font-family="var(--font-body)" font-weight="600">G</text>
+      <text x="42" y="218" fill="var(--accent)" font-size="9" font-family="var(--font-body)" font-weight="600">B</text>
+      {/* Gamut labels */}
+      <text x="155" y="170" fill="var(--accent)" font-size="10" font-family="var(--font-body)" font-weight="500" opacity="0.85">BT.2020</text>
+      <text x="115" y="152" fill="var(--text-muted)" font-size="10" font-family="var(--font-body)" opacity="0.6">sRGB</text>
+      {/* Axis labels */}
+      <text x="130" y="237" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="middle" opacity="0.4">x</text>
+      <text x="10" y="120" fill="var(--text-muted)" font-size="8" font-family="var(--font-body)" text-anchor="middle" transform="rotate(-90,10,120)" opacity="0.4">y</text>
+    </svg>
+  )
+}
+
 function HowItWorks() {
   useHead(
     'How It Works \u2014 Supernova HDR PNG Converter',
-    'Learn how Supernova converts standard images to HDR PNGs using PQ (ST 2084) transfer and Rec.2020 gamut.'
+    'Learn how Supernova converts standard images to HDR PNGs using PQ (ST 2084) transfer and Rec.2020 gamut.',
+    '/how-it-works'
   )
   return (
     <div class="how-it-works">
@@ -29,59 +161,107 @@ function HowItWorks() {
         Back
       </a>
 
-      <section class="how-section">
-        <h2>Overview</h2>
-        <p>Supernova converts standard images into HDR PNGs that glow on HDR displays.</p>
-        <p>It runs entirely in your browser — your images are never uploaded anywhere.</p>
+      {/* Overview — hero-style, no card */}
+      <section class="how-hero">
+        <h2>How it works</h2>
+        <p>Supernova converts standard images into HDR PNGs that glow on HDR displays — highlights exceed normal brightness, giving photos a vivid, luminous quality. Everything runs in your browser.</p>
       </section>
 
-      <section class="how-section">
+      {/* Pipeline — full-width flow diagram */}
+      <section class="how-section how-section--flush">
         <h2>The Pipeline</h2>
-        <div class="how-steps">
-          <div class="how-step">
-            <span class="how-step-num">1</span>
-            <div>
-              <h3>Decode</h3>
-              <p>Your image is loaded into an HTML canvas element. The browser decodes it into raw pixel data — 8-bit RGBA values (red, green, blue, alpha) for every pixel.</p>
-            </div>
+        <PipelineFlow />
+        <div class="pipeline-steps">
+          <div class="pipeline-step-text"><strong>1.</strong> Decode your image into raw 8-bit RGBA pixels via Canvas</div>
+          <div class="pipeline-step-text"><strong>2.</strong> Linearize, boost into HDR luminance, and PQ-encode to 16-bit</div>
+          <div class="pipeline-step-text"><strong>3.</strong> Wrap in a PNG with HDR metadata chunks (cICP, cHRM, iCCP)</div>
+        </div>
+      </section>
+
+      {/* Controls — compact */}
+      <section class="how-section">
+        <h2>The Controls</h2>
+        <ul class="how-meta-list">
+          <li><strong>Boost</strong> — how far into HDR luminance the image is pushed. Higher values produce brighter highlights but can blow out detail.</li>
+          <li><strong>Gamma</strong> — adjusts the sRGB decode curve before boosting. Values below 1.0 lighten midtones, above 1.0 darken them.</li>
+        </ul>
+      </section>
+
+      {/* PQ — side-by-side with curve + nits bar */}
+      <section class="how-section how-section--visual">
+        <div class="how-split">
+          <div class="how-split__text">
+            <h2>What is PQ?</h2>
+            <p>PQ (Perceptual Quantizer) is the transfer function behind HDR10 and Dolby Vision. Unlike gamma (~2.2) which tops out at 100 nits, PQ maps luminance up to 10,000 nits.</p>
+            <p>Its curve allocates more precision to dim regions where our eyes are most sensitive — far more efficient than gamma for HDR's wide brightness range.</p>
           </div>
-          <div class="how-step">
-            <span class="how-step-num">2</span>
-            <div>
-              <h3>Transform</h3>
-              <p>Each pixel goes through a conversion pipeline: sRGB values are linearized (gamma 2.4 decode), then brightness-boosted into the HDR luminance range, and finally encoded using the PQ (Perceptual Quantizer) transfer function into 16-bit values.</p>
-            </div>
+          <div class="how-split__visual">
+            <PQCurveSVG />
           </div>
-          <div class="how-step">
-            <span class="how-step-num">3</span>
-            <div>
-              <h3>Encode</h3>
-              <p>The transformed pixels are wrapped in a hand-built PNG file with special HDR metadata chunks — cICP, cHRM, and iCCP — that tell the display to render the image using the Rec.2020 color gamut and PQ transfer function.</p>
-            </div>
+        </div>
+        <NitsScale />
+      </section>
+
+      {/* Metadata — side-by-side with gamut diagram */}
+      <section class="how-section how-section--visual">
+        <div class="how-split how-split--reverse">
+          <div class="how-split__text">
+            <h2>The Metadata</h2>
+            <p>A valid HDR PNG needs metadata so the display knows how to interpret the pixels:</p>
+            <ul class="how-meta-list">
+              <li><strong>cICP</strong> — declares BT.2020 primaries + PQ transfer. The primary HDR signal.</li>
+              <li><strong>cHRM</strong> — BT.2020 chromaticity coordinates as fallback.</li>
+              <li><strong>iCCP</strong> — embedded ICC profile for broadest compatibility. Triggers EDR on macOS.</li>
+            </ul>
+          </div>
+          <div class="how-split__visual">
+            <GamutSVG />
           </div>
         </div>
       </section>
 
-      <section class="how-section">
-        <h2>What is PQ?</h2>
-        <p>PQ (Perceptual Quantizer), standardized as SMPTE ST 2084, is the transfer function used by HDR10 and Dolby Vision. Unlike traditional gamma curves (~2.2) which top out around 100 nits, PQ maps absolute luminance up to 10,000 nits.</p>
-        <p>PQ's curve is designed around human perception — it allocates more code values to dim regions where our eyes are most sensitive, and fewer to extremely bright highlights. This makes it far more efficient than gamma for encoding the wide brightness range of HDR content.</p>
-      </section>
+      {/* Compatibility + Privacy — bento grid */}
+      <div class="how-bento">
+        <section class="how-section how-bento__wide">
+          <h2>Compatibility</h2>
+          <p>Requires an HDR display and a supported browser. Chrome and Edge render HDR PNGs via cICP. Safari on macOS uses the ICC profile for EDR. Firefox doesn't yet support extended brightness. On SDR displays, the image renders as a normal PNG.</p>
+        </section>
+        <section class="how-section how-bento__narrow">
+          <h2>Privacy</h2>
+          <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
+        </section>
+      </div>
 
-      <section class="how-section">
-        <h2>The Metadata</h2>
-        <p>A valid HDR PNG needs more than just bright pixels — the display needs to know <em>how</em> to interpret them. Supernova embeds three metadata chunks:</p>
-        <ul class="how-meta-list">
-          <li><strong>cICP</strong> — the primary HDR signal. Four bytes that declare BT.2020 color primaries, PQ transfer function, and full-range encoding. Modern browsers (Chrome, Safari) use this.</li>
-          <li><strong>cHRM</strong> — chromaticity coordinates for the BT.2020 gamut. Acts as a fallback for decoders that don't understand cICP.</li>
-          <li><strong>iCCP</strong> — an embedded ICC color profile ("Rec2020 Gamut with PQ Transfer"). The broadest fallback — even apps that understand neither cICP nor cHRM can use this profile to render colors correctly. On macOS, this triggers Extended Dynamic Range (EDR).</li>
-        </ul>
-      </section>
-
-      <section class="how-section">
-        <h2>Privacy</h2>
-        <p>Everything runs client-side in your browser. Your images never leave your device — there are no uploads, no server processing, and no analytics on your content. The entire conversion happens in JavaScript using the Canvas API and manual PNG byte construction.</p>
-      </section>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is PQ (Perceptual Quantizer)?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "PQ is the transfer function behind HDR10 and Dolby Vision. Unlike gamma (~2.2) which tops out at 100 nits, PQ maps luminance up to 10,000 nits. Its curve allocates more precision to dim regions where our eyes are most sensitive."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What browsers support HDR PNG?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Chrome and Edge render HDR PNGs via cICP. Safari on macOS uses the ICC profile for EDR. Firefox doesn't yet support extended brightness. On SDR displays, the image renders as a normal PNG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is my image uploaded to a server?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Supernova is 100% client-side. No uploads, no server, no analytics. Your images never leave your device."
+            }
+          }
+        ]
+      }) }} />
     </div>
   )
 }
@@ -89,7 +269,8 @@ function HowItWorks() {
 function Home() {
   useHead(
     'Supernova \u2014 HDR PNG Converter',
-    'Convert any image to HDR PNG in your browser. Free, private, no uploads. PQ (ST 2084) transfer with Rec.2020 gamut for HDR10-compatible output.'
+    'Convert any image to HDR PNG in your browser. Free, private, no uploads. PQ (ST 2084) transfer with Rec.2020 gamut for HDR10-compatible output.',
+    '/'
   )
   const [image, setImage] = useState<ImageState | null>(null)
   const [boost, setBoost] = useState(4)
