@@ -1,0 +1,22 @@
+{
+  "name": "supernova-image",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config vite.config.ts",
+    "build": "vite build --config vite.config.ts && cp dist/index.html dist/404.html"
+  },
+  "dependencies": {
+    "pako": "^2.1.0",
+    "preact": "^10.28.3",
+    "preact-iso": "^2.11.1"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.10.3",
+    "@types/node": "^25.2.1",
+    "@types/pako": "^2.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}
