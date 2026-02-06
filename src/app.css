@@ -891,6 +891,98 @@ body {
   display: block;
 }
 
+/* ===== Browser Compatibility Grid ===== */
+.compat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.compat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.9rem 0.5rem 0.75rem;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.compat-card:hover {
+  border-color: var(--border);
+}
+
+.compat-card__status {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.15rem;
+}
+
+.compat-card__status svg {
+  width: 16px;
+  height: 16px;
+}
+
+.compat-card--full .compat-card__status {
+  background: rgba(74, 222, 128, 0.12);
+}
+
+.compat-card--full .compat-card__status svg {
+  stroke: #4ade80;
+}
+
+.compat-card--partial .compat-card__status {
+  background: rgba(255, 157, 46, 0.12);
+}
+
+.compat-card--partial .compat-card__status svg {
+  stroke: var(--accent);
+}
+
+.compat-card--none .compat-card__status {
+  background: rgba(138, 133, 128, 0.12);
+}
+
+.compat-card--none .compat-card__status svg {
+  stroke: var(--text-muted);
+}
+
+.compat-card__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.compat-card__engine {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--accent);
+  opacity: 0.85;
+}
+
+.compat-card--none .compat-card__engine {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.compat-card__note {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  line-height: 1.3;
+}
+
 /* ===== Bento Grid ===== */
 .how-bento {
   display: grid;
@@ -1007,6 +1099,11 @@ body {
   .gamut-svg {
     width: 100%;
     max-width: 220px;
+  }
+
+  /* Compat grid: 2x2 on mobile */
+  .compat-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   /* Bento stacks */
