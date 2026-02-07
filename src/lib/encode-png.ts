@@ -13,10 +13,22 @@
  */
 
 import { getICCProfileBytes } from './icc-profile'
+import { zlibSync, type ZlibOptions } from 'fflate'
+import type { EncodeStats } from './perf-types'
 
 const textEncoder = new TextEncoder()
 
-async function deflate(data: Uint8Array): Promise<Uint8Array> {
+const DEFAULT_IDAT_ZLIB_LEVEL = 6
+const ICC_ZLIB_LEVEL = 9
+
+export type CompressionBackend = 'fflate' | 'compression-stream'
+
+function deflateFflate(data: Uint8Array, level = DEFAULT_IDAT_ZLIB_LEVEL): Uint8Array {
+  const opts: ZlibOptions = { level, mem: 8 }
+  return zlibSync(data, opts)
+}
+
+async function deflateCompressionStream(data: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream('deflate')
   const writer = cs.writable.getWriter()
   writer.write(data)
@@ -32,8 +44,21 @@ async function deflate(data: Uint8Array): Promise<Uint8Array> {
   for (const c of chunks) len += c.length
   const result = new Uint8Array(len)
   let off = 0
-  for (const c of chunks) { result.set(c, off); off += c.length }
+  for (const c of chunks) {
+    result.set(c, off)
+    off += c.length
+  }
   return result
+}
+
+async function deflate(
+  data: Uint8Array,
+  backend: CompressionBackend,
+  level = DEFAULT_IDAT_ZLIB_LEVEL,
+): Promise<Uint8Array> {
+  return backend === 'compression-stream'
+    ? deflateCompressionStream(data)
+    : deflateFflate(data, level)
 }
 
 // 8-byte PNG file signature — identifies the file as PNG and detects transmission errors
@@ -136,17 +161,30 @@ function makeCHRM(): Uint8Array {
  * (some image editors, older software) fall back to this ICC profile to still
  * render colors correctly. The profile is deflate-compressed per PNG spec.
  */
-async function makeICCP(): Promise<Uint8Array> {
-  const profileBytes = await getICCProfileBytes()
-  const compressed = await deflate(profileBytes)
-  const name = textEncoder.encode('Rec2020-PQ')
-  // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
-  const data = new Uint8Array(name.length + 2 + compressed.length)
-  data.set(name, 0)
-  data[name.length] = 0     // null separator
-  data[name.length + 1] = 0 // compression method: deflate
-  data.set(compressed, name.length + 2)
-  return makeChunk('iCCP', data)
+const cachedICCPChunkPromises = new Map<CompressionBackend, Promise<Uint8Array>>()
+
+async function makeICCPWithBackend(backend: CompressionBackend): Promise<Uint8Array> {
+  let cached = cachedICCPChunkPromises.get(backend)
+  if (!cached) {
+    cached = (async () => {
+      const profileBytes = await getICCProfileBytes()
+      const compressed = await deflate(profileBytes, backend, ICC_ZLIB_LEVEL)
+      const name = textEncoder.encode('Rec2020-PQ')
+      // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
+      const data = new Uint8Array(name.length + 2 + compressed.length)
+      data.set(name, 0)
+      data[name.length] = 0     // null separator
+      data[name.length + 1] = 0 // compression method: deflate
+      data.set(compressed, name.length + 2)
+      return makeChunk('iCCP', data)
+    })()
+    cachedICCPChunkPromises.set(backend, cached)
+  }
+  return cached
+}
+
+export function resetEncodeCachesForTesting(): void {
+  cachedICCPChunkPromises.clear()
 }
 
 /**
@@ -156,28 +194,42 @@ async function makeICCP(): Promise<Uint8Array> {
  * So each pixel is 6 bytes (2 bytes × 3 channels), and each row has a leading
  * filter byte. The entire block is then deflate-compressed.
  */
-async function makeIDAT(width: number, height: number, pqPixels: Uint16Array): Promise<Uint8Array> {
+async function makeIDAT(
+  width: number,
+  height: number,
+  pqPixels: Uint16Array,
+  compressionBackend: CompressionBackend,
+  compressionLevel: number,
+  encodeStats?: EncodeStats,
+): Promise<Uint8Array> {
   const rowBytes = 1 + width * 6 // 1 filter byte + 3 channels × 2 bytes per pixel
   const raw = new Uint8Array(height * rowBytes)
+  const packStart = performance.now()
+  let pi = 0
 
   for (let y = 0; y < height; y++) {
     const rowOffset = y * rowBytes
     raw[rowOffset] = 0 // filter: None
 
+    let ri = rowOffset + 1
     for (let x = 0; x < width; x++) {
-      const pi = (y * width + x) * 3
-      const ri = rowOffset + 1 + x * 6
       // Big-endian 16-bit per channel
-      raw[ri]     = (pqPixels[pi] >> 8) & 0xFF
-      raw[ri + 1] = pqPixels[pi] & 0xFF
-      raw[ri + 2] = (pqPixels[pi + 1] >> 8) & 0xFF
-      raw[ri + 3] = pqPixels[pi + 1] & 0xFF
-      raw[ri + 4] = (pqPixels[pi + 2] >> 8) & 0xFF
-      raw[ri + 5] = pqPixels[pi + 2] & 0xFF
+      const r = pqPixels[pi++]
+      const g = pqPixels[pi++]
+      const b = pqPixels[pi++]
+      raw[ri++] = (r >> 8) & 0xFF
+      raw[ri++] = r & 0xFF
+      raw[ri++] = (g >> 8) & 0xFF
+      raw[ri++] = g & 0xFF
+      raw[ri++] = (b >> 8) & 0xFF
+      raw[ri++] = b & 0xFF
     }
   }
 
-  const compressed = await deflate(raw)
+  if (encodeStats) encodeStats.idatPackMs = performance.now() - packStart
+  const compressStart = performance.now()
+  const compressed = await deflate(raw, compressionBackend, compressionLevel)
+  if (encodeStats) encodeStats.idatCompressMs = performance.now() - compressStart
   return makeChunk('IDAT', compressed)
 }
 
@@ -204,13 +256,36 @@ function makeIEND(): Uint8Array {
  * @param {Uint16Array} pqPixels - RGB16 pixel data (3 values per pixel)
  * @returns {Uint8Array} Complete PNG file as a byte array
  */
-export async function encodePNG(width: number, height: number, pqPixels: Uint16Array): Promise<Uint8Array> {
+export interface EncodePNGOptions {
+  idatCompressionLevel?: number
+  compressionBackend?: CompressionBackend
+  encodeStats?: EncodeStats
+}
+
+function getDefaultCompressionBackend(): CompressionBackend {
+  return typeof CompressionStream === 'undefined' ? 'fflate' : 'compression-stream'
+}
+
+export async function encodePNG(
+  width: number,
+  height: number,
+  pqPixels: Uint16Array,
+  options: EncodePNGOptions = {},
+): Promise<Uint8Array> {
+  const compressionLevel = options.idatCompressionLevel ?? DEFAULT_IDAT_ZLIB_LEVEL
+  const compressionBackend = options.compressionBackend ?? getDefaultCompressionBackend()
+  const encodeStats = options.encodeStats
+
+  const iccpStart = performance.now()
+  const iccpChunk = await makeICCPWithBackend(compressionBackend)
+  if (encodeStats) encodeStats.iccpMs = performance.now() - iccpStart
+
   const chunks = [
     makeIHDR(width, height),  // image header
     makeCICP(),               // HDR color info (primary signal)
     makeCHRM(),               // chromaticity (legacy fallback)
-    await makeICCP(),         // ICC profile (compatibility fallback)
-    await makeIDAT(width, height, pqPixels), // pixel data
+    iccpChunk,                // ICC profile (compatibility fallback)
+    await makeIDAT(width, height, pqPixels, compressionBackend, compressionLevel, encodeStats), // pixel data
     makeIEND(),               // end marker
   ]
 
@@ -219,6 +294,7 @@ export async function encodePNG(width: number, height: number, pqPixels: Uint16A
   for (const chunk of chunks) totalSize += chunk.length
 
   // Assemble the final PNG byte array
+  const assembleStart = performance.now()
   const png = new Uint8Array(totalSize)
   let offset = 0
   png.set(PNG_SIGNATURE, offset)
@@ -227,6 +303,7 @@ export async function encodePNG(width: number, height: number, pqPixels: Uint16A
     png.set(chunk, offset)
     offset += chunk.length
   }
+  if (encodeStats) encodeStats.assembleMs = performance.now() - assembleStart
 
   return png
 }

@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts",
-    "build": "vite build --config vite.config.ts && node scripts/prepare-pages-artifact.mjs"
+    "build": "vite build --config vite.config.ts && node scripts/prepare-pages-artifact.mjs",
+    "test": "vitest run",
+    "bench:hdr": "bun run scripts/benchmark-hdr.ts"
   },
   "dependencies": {
     "@fontsource/outfit": "^5.2.8",
     "@fontsource/unbounded": "^5.2.8",
+    "fflate": "^0.8.2",
     "preact": "^10.28.3",
     "preact-iso": "^2.11.1"
   },
@@ -17,6 +20,7 @@
     "@preact/preset-vite": "^2.10.3",
     "@types/node": "^25.2.1",
     "typescript": "^5.9.3",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
   }
 }

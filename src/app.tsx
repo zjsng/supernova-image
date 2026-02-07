@@ -2,12 +2,19 @@ import { Fragment } from 'preact'
 import { useState, useRef, useCallback, useEffect } from 'preact/hooks'
 import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
 import { useHead } from './lib/use-head'
+import { BOOST_UI_MAX, BOOST_UI_MIN, boostToTargetNits } from './lib/hdr-boost'
+import type {
+  WorkerConvertRequest,
+  WorkerResponseMessage,
+  WorkerSuccessResponse,
+} from './lib/worker-protocol'
 
 interface ImageState {
   src: string
   name: string
   width: number
   height: number
+  file: File
   el: HTMLImageElement
 }
 
@@ -268,7 +275,7 @@ function HowItWorks() {
         <PipelineFlow />
         <div class="pipeline-steps">
           <div class="pipeline-step-text"><strong>1.</strong> Decode your image into raw 8-bit RGBA pixels via Canvas</div>
-          <div class="pipeline-step-text"><strong>2.</strong> Linearize, boost into HDR luminance, and PQ-encode to 16-bit</div>
+          <div class="pipeline-step-text"><strong>2.</strong> Linearize, map SDR diffuse white (~100 nits), perceptually remap boost up to 10,000 nits, apply adaptive highlight roll-off, then PQ-encode to 16-bit</div>
           <div class="pipeline-step-text"><strong>3.</strong> Wrap in a PNG with HDR metadata chunks (cICP, cHRM, iCCP)</div>
         </div>
       </RevealSection>
@@ -277,7 +284,7 @@ function HowItWorks() {
       <RevealSection className="how-section">
         <h2>The Controls</h2>
         <ul class="how-meta-list">
-          <li><strong>Boost</strong> — how far into HDR luminance the image is pushed. Higher values produce brighter highlights but can blow out detail.</li>
+          <li><strong>Boost</strong> — uses a perceptual remap from a 100-nit baseline so high values feel punchier (1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits).</li>
           <li><strong>Gamma</strong> — adjusts the sRGB decode curve before boosting. Values below 1.0 lighten midtones, above 1.0 darken them.</li>
         </ul>
       </RevealSection>
@@ -369,23 +376,79 @@ function Home() {
     '/'
   )
   const [image, setImage] = useState<ImageState | null>(null)
-  const [boost, setBoost] = useState(4)
+  const [boost, setBoost] = useState(5)
   const [gamma, setGamma] = useState(1.0)
   const [processing, setProcessing] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
   const [dragover, setDragover] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const workerRef = useRef<Worker | null>(null)
+  const nextRequestIdRef = useRef(1)
+  const activeRequestIdRef = useRef<number | null>(null)
+  const workerDecodeSupportRef = useRef<boolean | null>(null)
+  const pendingRef = useRef(
+    new Map<number, {
+      resolve: (value: WorkerSuccessResponse) => void
+      reject: (error: Error) => void
+    }>()
+  )
+
+  const getWorker = useCallback((): Worker => {
+    if (workerRef.current) return workerRef.current
+    const worker = new Worker(new URL('./lib/worker.ts', import.meta.url), { type: 'module' })
+    worker.onmessage = (e: MessageEvent<WorkerResponseMessage>) => {
+      const message = e.data
+      if (!message || message.type !== 'result') return
+      const pending = pendingRef.current.get(message.id)
+      if (!pending) return
+      pendingRef.current.delete(message.id)
+      if (activeRequestIdRef.current === message.id) activeRequestIdRef.current = null
+
+      if (message.ok) {
+        pending.resolve(message)
+        return
+      }
+
+      const err = new Error(message.error) as Error & { code?: string }
+      err.code = message.code
+      pending.reject(err)
+    }
+    worker.onerror = () => {
+      for (const [id, pending] of pendingRef.current.entries()) {
+        pending.reject(new Error(`Worker failed while processing request ${id}`))
+      }
+      pendingRef.current.clear()
+      activeRequestIdRef.current = null
+      workerRef.current?.terminate()
+      workerRef.current = null
+    }
+    workerRef.current = worker
+    return worker
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      workerRef.current?.terminate()
+      workerRef.current = null
+      for (const pending of pendingRef.current.values()) {
+        pending.reject(new Error('Worker closed before conversion completed'))
+      }
+      pendingRef.current.clear()
+      activeRequestIdRef.current = null
+    }
+  }, [])
 
   const loadImage = useCallback((file: File) => {
     if (!file || !file.type.startsWith('image/')) return
+    if (image?.src) URL.revokeObjectURL(image.src)
     const url = URL.createObjectURL(file)
     const img = new Image()
     img.onload = () => {
-      setImage({ src: url, name: file.name, width: img.width, height: img.height, el: img })
+      setImage({ src: url, name: file.name, width: img.width, height: img.height, file, el: img })
     }
     img.src = url
-  }, [])
+  }, [image])
 
   const handleDrop = useCallback((e: DragEvent) => {
     e.preventDefault()
@@ -417,44 +480,94 @@ function Home() {
     setImage(null)
   }, [image])
 
+  const decodePixelsOnMainThread = useCallback((img: ImageState): {
+    pixels: Uint8ClampedArray
+    width: number
+    height: number
+  } => {
+    const canvas = canvasRef.current
+    if (!canvas) throw new Error('Canvas is unavailable for decode fallback')
+    canvas.width = img.width
+    canvas.height = img.height
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) throw new Error('Failed to acquire 2D context')
+    ctx.drawImage(img.el, 0, 0)
+    const imageData = ctx.getImageData(0, 0, img.width, img.height)
+    return { pixels: imageData.data, width: img.width, height: img.height }
+  }, [])
+
+  const runWorkerConvert = useCallback((
+    payload: Omit<WorkerConvertRequest, 'type' | 'id'>,
+    transfer: Transferable[] = [],
+  ): Promise<WorkerSuccessResponse> => {
+    const worker = getWorker()
+    const id = nextRequestIdRef.current++
+    const priorActiveId = activeRequestIdRef.current
+    if (priorActiveId !== null) {
+      worker.postMessage({ type: 'cancel', id: priorActiveId })
+    }
+    activeRequestIdRef.current = id
+
+    return new Promise((resolve, reject) => {
+      pendingRef.current.set(id, { resolve, reject })
+      worker.postMessage({ type: 'convert', id, ...payload }, transfer)
+    })
+  }, [getWorker])
+
   const convert = useCallback(async () => {
     if (!image) return
     setProcessing(true)
 
     try {
-      const { el, width, height, name } = image
-      const canvas = canvasRef.current!
-      canvas.width = width
-      canvas.height = height
-      const ctx = canvas.getContext('2d')!
-      ctx.drawImage(el, 0, 0)
-      const imageData = ctx.getImageData(0, 0, width, height)
+      const collectStats = import.meta.env.DEV
+      let result: WorkerSuccessResponse
 
-      const worker = new Worker(
-        new URL('./lib/worker.ts', import.meta.url),
-        { type: 'module' }
-      )
-
-      const pngData = await new Promise<Uint8Array>((resolve, reject) => {
-        worker.onmessage = (e: MessageEvent) => {
-          resolve(e.data)
-          worker.terminate()
+      const shouldTryWorkerDecode = image.file && workerDecodeSupportRef.current !== false
+      if (shouldTryWorkerDecode) {
+        try {
+          result = await runWorkerConvert({
+            file: image.file,
+            boost,
+            gamma,
+            collectStats,
+          })
+          workerDecodeSupportRef.current = true
+        } catch (err) {
+          const code = (err as Error & { code?: string }).code
+          if (code !== 'DECODE_UNSUPPORTED') throw err
+          workerDecodeSupportRef.current = false
+          const { pixels, width, height } = decodePixelsOnMainThread(image)
+          result = await runWorkerConvert(
+            { pixels, width, height, boost, gamma, collectStats },
+            [pixels.buffer],
+          )
         }
-        worker.onerror = (e) => {
-          reject(e)
-          worker.terminate()
-        }
-        const pixels = imageData.data
-        worker.postMessage(
-          { pixels, width, height, boost, gamma },
-          [pixels.buffer]
+      } else {
+        const { pixels, width, height } = decodePixelsOnMainThread(image)
+        result = await runWorkerConvert(
+          { pixels, width, height, boost, gamma, collectStats },
+          [pixels.buffer],
         )
-      })
+      }
+
+      const pngData = result.pngData
+      if (collectStats && result.stats) {
+        const stats = result.stats
+        console.table({
+          decodeMs: stats.decodeMs.toFixed(2),
+          processMs: stats.processMs.toFixed(2),
+          encodeMs: stats.encodeMs.toFixed(2),
+          totalMs: stats.totalMs.toFixed(2),
+          idatPackMs: stats.encode.idatPackMs.toFixed(2),
+          idatCompressMs: stats.encode.idatCompressMs.toFixed(2),
+          outputKB: (stats.outputBytes / 1024).toFixed(1),
+        })
+      }
 
       const blob = new Blob([pngData], { type: 'image/png' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
-      const stem = name.replace(/\.[^.]+$/, '')
+      const stem = image.name.replace(/\.[^.]+$/, '')
       a.href = url
       a.download = `${stem}-hdr.png`
       a.click()
@@ -464,7 +577,7 @@ function Home() {
     } finally {
       setProcessing(false)
     }
-  }, [image, boost, gamma])
+  }, [image, boost, gamma, decodePixelsOnMainThread, runWorkerConvert])
 
   return (
     <>
@@ -518,14 +631,14 @@ function Home() {
               <input
                 id="boost-range"
                 type="range"
-                min="1"
-                max="10"
+                min={BOOST_UI_MIN}
+                max={BOOST_UI_MAX}
                 step="0.5"
                 value={boost}
                 onInput={(e) => setBoost(Number((e.target as HTMLInputElement).value))}
-                style={{ background: rangeBackground(boost, 1, 10) }}
+                style={{ background: rangeBackground(boost, BOOST_UI_MIN, BOOST_UI_MAX) }}
               />
-              <span class="value">{boost.toFixed(1)}</span>
+              <span class="value">{boost.toFixed(1)} · ~{Math.round(boostToTargetNits(boost)).toLocaleString()} nits</span>
             </div>
             <div class="control-group">
               <label htmlFor="gamma-range">Gamma</label>
