@@ -1,5 +1,5 @@
 import { Fragment } from 'preact'
-import { useState, useRef, useCallback } from 'preact/hooks'
+import { useState, useRef, useCallback, useEffect } from 'preact/hooks'
 import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
 import { useHead } from './lib/use-head'
 
@@ -16,6 +16,27 @@ function rangeBackground(value: number, min: number, max: number): string {
   return `linear-gradient(90deg, var(--accent) 0%, var(--accent-light) ${pct}%, var(--border) ${pct}%)`
 }
 
+function downloadButtonLabel(processing: boolean, downloaded: boolean): string {
+  if (processing) return 'Converting...'
+  if (downloaded) return 'Downloaded!'
+  return 'Download HDR PNG'
+}
+
+function ArrowLeftIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M19 12H5m0 0l7 7m-7-7l7-7" />
+    </svg>
+  )
+}
+
+function pipelineStageClass(index: number, total: number): string {
+  const classes = ['pipeline-stage']
+  if (index === 0) classes.push('pipeline-stage--input')
+  if (index === total - 1) classes.push('pipeline-stage--output')
+  return classes.join(' ')
+}
+
 function PipelineFlow() {
   const stages = [
     { label: 'sRGB', sub: '8-bit' },
@@ -28,7 +49,7 @@ function PipelineFlow() {
     <div class="pipeline-flow" role="img" aria-label="Conversion pipeline: sRGB 8-bit to Linearize to Boost to PQ Encode to HDR PNG 16-bit">
       {stages.map((s, i) => (
         <Fragment key={i}>
-          <div class={`pipeline-stage${i === 0 ? ' pipeline-stage--input' : ''}${i === stages.length - 1 ? ' pipeline-stage--output' : ''}`}>
+          <div class={pipelineStageClass(i, stages.length)}>
             <span class="pipeline-stage__label">{s.label}</span>
             <span class="pipeline-stage__sub">{s.sub}</span>
           </div>
@@ -147,6 +168,20 @@ function GamutSVG() {
   )
 }
 
+const STATUS_ICON_PATHS: Record<string, string> = {
+  full: 'M20 6L9 17l-5-5',
+  partial: 'M5 12h14',
+  none: 'M18 6L6 18M6 6l12 12',
+}
+
+function StatusIcon({ status }: { status: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d={STATUS_ICON_PATHS[status]} />
+    </svg>
+  )
+}
+
 function BrowserCompat() {
   const browsers = [
     { name: 'Chrome', engine: 'cICP', status: 'full' as const, note: 'Full HDR rendering' },
@@ -159,15 +194,7 @@ function BrowserCompat() {
       {browsers.map((b) => (
         <div class={`compat-card compat-card--${b.status}`} role="listitem" key={b.name}>
           <div class="compat-card__status" aria-hidden="true">
-            {b.status === 'full' && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-            )}
-            {b.status === 'partial' && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /></svg>
-            )}
-            {b.status === 'none' && (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
-            )}
+            <StatusIcon status={b.status} />
           </div>
           <span class="compat-card__name">{b.name}</span>
           <span class="compat-card__engine">{b.engine}</span>
@@ -175,6 +202,44 @@ function BrowserCompat() {
         </div>
       ))}
     </div>
+  )
+}
+
+function useReveal() {
+  const ref = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    el.classList.add('will-reveal')
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('revealed')
+          observer.unobserve(el)
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref }
+}
+
+interface RevealSectionProps {
+  children: preact.ComponentChildren
+  className?: string
+}
+
+function RevealSection({ children, className = '' }: RevealSectionProps) {
+  const { ref } = useReveal()
+  return (
+    <section ref={ref} class={className}>
+      {children}
+    </section>
   )
 }
 
@@ -187,9 +252,7 @@ function HowItWorks() {
   return (
     <div class="how-it-works">
       <a class="how-back-link" href="/supernova-image/">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M19 12H5m0 0l7 7m-7-7l7-7" />
-        </svg>
+        <ArrowLeftIcon />
         Back to HDR PNG Converter
       </a>
 
@@ -200,7 +263,7 @@ function HowItWorks() {
       </section>
 
       {/* Pipeline — full-width flow diagram */}
-      <section class="how-section how-section--flush">
+      <RevealSection className="how-section how-section--flush">
         <h2>The Pipeline</h2>
         <PipelineFlow />
         <div class="pipeline-steps">
@@ -208,19 +271,19 @@ function HowItWorks() {
           <div class="pipeline-step-text"><strong>2.</strong> Linearize, boost into HDR luminance, and PQ-encode to 16-bit</div>
           <div class="pipeline-step-text"><strong>3.</strong> Wrap in a PNG with HDR metadata chunks (cICP, cHRM, iCCP)</div>
         </div>
-      </section>
+      </RevealSection>
 
       {/* Controls — compact */}
-      <section class="how-section">
+      <RevealSection className="how-section">
         <h2>The Controls</h2>
         <ul class="how-meta-list">
           <li><strong>Boost</strong> — how far into HDR luminance the image is pushed. Higher values produce brighter highlights but can blow out detail.</li>
           <li><strong>Gamma</strong> — adjusts the sRGB decode curve before boosting. Values below 1.0 lighten midtones, above 1.0 darken them.</li>
         </ul>
-      </section>
+      </RevealSection>
 
       {/* PQ — side-by-side with curve + nits bar */}
-      <section class="how-section how-section--visual">
+      <RevealSection className="how-section how-section--visual">
         <div class="how-split">
           <div class="how-split__text">
             <h2>What is PQ?</h2>
@@ -232,10 +295,10 @@ function HowItWorks() {
           </div>
         </div>
         <NitsScale />
-      </section>
+      </RevealSection>
 
       {/* Metadata — side-by-side with gamut diagram */}
-      <section class="how-section how-section--visual">
+      <RevealSection className="how-section how-section--visual">
         <div class="how-split how-split--reverse">
           <div class="how-split__text">
             <h2>The Metadata</h2>
@@ -250,20 +313,20 @@ function HowItWorks() {
             <GamutSVG />
           </div>
         </div>
-      </section>
+      </RevealSection>
 
       {/* Compatibility — full-width with browser grid */}
-      <section class="how-section">
+      <RevealSection className="how-section">
         <h2>Compatibility</h2>
         <p>Requires an HDR display and a supported browser. On SDR displays, the image renders as a normal PNG.</p>
         <BrowserCompat />
-      </section>
+      </RevealSection>
 
       {/* Privacy */}
-      <section class="how-section">
+      <RevealSection className="how-section">
         <h2>Privacy</h2>
         <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
-      </section>
+      </RevealSection>
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
@@ -309,6 +372,7 @@ function Home() {
   const [boost, setBoost] = useState(4)
   const [gamma, setGamma] = useState(1.0)
   const [processing, setProcessing] = useState(false)
+  const [downloaded, setDownloaded] = useState(false)
   const [dragover, setDragover] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -395,6 +459,8 @@ function Home() {
       a.download = `${stem}-hdr.png`
       a.click()
       URL.revokeObjectURL(url)
+      setDownloaded(true)
+      setTimeout(() => setDownloaded(false), 2500)
     } finally {
       setProcessing(false)
     }
@@ -481,8 +547,12 @@ function Home() {
             <button class="btn btn-secondary" onClick={reset}>
               New image
             </button>
-            <button class="btn btn-download" onClick={convert} disabled={processing}>
-              {processing ? 'Converting...' : 'Download HDR PNG'}
+            <button
+              class={`btn btn-download${downloaded ? ' btn-download--success' : ''}`}
+              onClick={convert}
+              disabled={processing}
+            >
+              {downloadButtonLabel(processing, downloaded)}
             </button>
           </div>
 
@@ -499,11 +569,30 @@ function Home() {
       </section>
 
       <footer class="trust-badge">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
-          <path d="M9 12l2 2 4-4" />
-        </svg>
-        <span>100% client-side · no uploads · your images never leave this device</span>
+        <span class="trust-badge__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
+          </svg>
+          100% client-side
+        </span>
+        <span class="trust-badge__divider" aria-hidden="true" />
+        <span class="trust-badge__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+            <path d="M7 10l5-5 5 5" />
+            <path d="M12 5v10" />
+            <line x1="4" y1="4" x2="20" y2="20" stroke-width="2" />
+          </svg>
+          No uploads
+        </span>
+        <span class="trust-badge__divider" aria-hidden="true" />
+        <span class="trust-badge__item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+            <path d="M7 11V7a5 5 0 0110 0v4" />
+          </svg>
+          Images never leave your device
+        </span>
       </footer>
     </>
   )
@@ -519,9 +608,13 @@ function NotFound() {
 
   return (
     <div class="not-found">
-      <h1>Page Not Found</h1>
-      <p>The page you requested does not exist. Go back to the converter to create an HDR PNG.</p>
-      <a class="not-found__link" href="/supernova-image/">Go to HDR PNG Converter</a>
+      <div class="not-found__star" aria-hidden="true" />
+      <h1>Signal Lost</h1>
+      <p>This page drifted beyond the visible spectrum.</p>
+      <a class="not-found__link" href="/supernova-image/">
+        <ArrowLeftIcon />
+        Go to HDR PNG Converter
+      </a>
     </div>
   )
 }

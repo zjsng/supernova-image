@@ -39,6 +39,16 @@ body {
   background-attachment: fixed;
 }
 
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.035;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 #app {
   display: flex;
   flex-direction: column;
@@ -174,6 +184,12 @@ body {
   stroke: var(--text-muted);
   opacity: 0.5;
   transition: transform var(--transition-base), opacity var(--transition-base), filter var(--transition-base);
+  animation: gentleFloat 3s ease-in-out infinite;
+}
+
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .drop-zone:hover .drop-zone__prompt svg {
@@ -508,6 +524,14 @@ body {
   display: none;
 }
 
+.btn-download--success {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+}
+
+.btn-download--success::before {
+  background: linear-gradient(135deg, #4ade80, #22c55e);
+}
+
 /* ===== Filename ===== */
 .filename {
   margin-top: 1rem;
@@ -529,21 +553,35 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 1rem;
   font-size: 0.75rem;
   color: var(--text-muted);
-  opacity: 0.4;
+  opacity: 0.65;
   transition: opacity var(--transition-base);
+  flex-wrap: wrap;
 }
 
 .trust-badge:hover {
-  opacity: 0.7;
+  opacity: 0.85;
 }
 
-.trust-badge svg {
+.trust-badge__item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.trust-badge__item svg {
   width: 14px;
   height: 14px;
-  stroke: currentColor;
+  stroke: var(--accent);
+  flex-shrink: 0;
+}
+
+.trust-badge__divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border);
   flex-shrink: 0;
 }
 
@@ -553,10 +591,7 @@ body {
     padding: 3rem 1.25rem 2rem;
   }
 
-  .header h1 {
-    font-size: 2rem;
-  }
-
+  .header h1,
   .header__brand {
     font-size: 2rem;
   }
@@ -590,10 +625,7 @@ body {
 }
 
 @media (max-width: 380px) {
-  .header h1 {
-    font-size: 1.75rem;
-  }
-
+  .header h1,
   .header__brand {
     font-size: 1.75rem;
   }
@@ -679,14 +711,19 @@ body {
   border-radius: var(--radius-md);
   padding: 1.5rem 1.75rem;
   margin-bottom: 1rem;
-  animation: fadeInUp 0.5s ease both;
 }
 
-.how-section:nth-child(3) { animation-delay: 0.05s; }
-.how-section:nth-child(4) { animation-delay: 0.1s; }
-.how-section:nth-child(5) { animation-delay: 0.15s; }
-.how-section:nth-child(6) { animation-delay: 0.2s; }
-.how-section:nth-child(7) { animation-delay: 0.25s; }
+/* Scroll-triggered reveal */
+.will-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.will-reveal.revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 .how-section--flush {
   padding-bottom: 1.25rem;
@@ -751,8 +788,22 @@ body {
   border: 1px solid var(--border-subtle);
   backdrop-filter: blur(12px);
   border-radius: var(--radius-md);
-  padding: 2rem 1.5rem;
+  padding: 3rem 1.5rem 2.5rem;
   animation: fadeInUp 0.5s ease both;
+}
+
+.not-found__star {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 1.5rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 157, 46, 0.15) 0%, transparent 70%);
+  animation: starPulse 3s ease-in-out infinite;
+}
+
+@keyframes starPulse {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.05); }
 }
 
 .not-found h1 {
@@ -770,12 +821,24 @@ body {
 }
 
 .not-found__link {
-  display: inline-block;
-  margin-top: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.25rem;
   color: var(--accent);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 3px;
+  transition: color var(--transition-base);
+}
+
+.not-found__link svg {
+  width: 16px;
+  height: 16px;
+}
+
+.not-found__link:hover {
+  color: var(--accent-light);
 }
 
 .how-section em {
@@ -1191,5 +1254,13 @@ body {
   .nits-row {
     grid-template-columns: 3rem 1fr 5.5rem;
     gap: 0.4rem;
+  }
+}
+
+/* ===== Reduced Motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }
