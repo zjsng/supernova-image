@@ -53,28 +53,14 @@ body::after {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100dvh;
-  height: 100vh;
+  min-height: 100vh;
   padding: 3rem 2rem 2rem;
   max-width: 780px;
   margin: 0 auto;
 }
 
-@supports (height: 100dvh) {
-  #app { height: 100dvh; }
-}
-
-/* How It Works and 404 pages need to scroll */
-#app:has(.how-it-works),
-#app:has(.not-found) {
-  height: auto;
-  min-height: 100dvh;
-  min-height: 100vh;
-}
-
 @supports (min-height: 100dvh) {
-  #app:has(.how-it-works),
-  #app:has(.not-found) { min-height: 100dvh; }
+  #app { min-height: 100dvh; }
 }
 
 /* ===== Header ===== */
@@ -276,8 +262,7 @@ body::after {
   position: relative;
   width: 100%;
   max-width: 640px;
-  flex: 1;
-  min-height: 0;
+  min-height: 160px;
   animation: fadeInUp 0.5s ease both;
 }
 
@@ -654,7 +639,6 @@ body::after {
   .btn-row {
     flex-direction: column;
     width: 100%;
-    max-width: 640px;
   }
 
   .btn {
@@ -785,13 +769,15 @@ body::after {
   letter-spacing: -0.01em;
 }
 
-.how-section p {
+.how-section p,
+.seo-copy p {
   color: var(--text-muted);
   font-size: 0.88rem;
   line-height: 1.65;
 }
 
-.how-section p + p {
+.how-section p + p,
+.seo-copy p + p {
   margin-top: 0.5rem;
 }
 
@@ -815,16 +801,6 @@ body::after {
   font-size: 1rem;
   letter-spacing: -0.01em;
   margin-bottom: 0.6rem;
-}
-
-.seo-copy p {
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  line-height: 1.65;
-}
-
-.seo-copy p + p {
-  margin-top: 0.5rem;
 }
 
 /* Not Found */
