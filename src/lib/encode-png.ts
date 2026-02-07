@@ -137,7 +137,7 @@ function makeCHRM(): Uint8Array {
  * render colors correctly. The profile is deflate-compressed per PNG spec.
  */
 async function makeICCP(): Promise<Uint8Array> {
-  const profileBytes = getICCProfileBytes()
+  const profileBytes = await getICCProfileBytes()
   const compressed = await deflate(profileBytes)
   const name = textEncoder.encode('Rec2020-PQ')
   // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
