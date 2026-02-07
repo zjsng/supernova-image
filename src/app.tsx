@@ -180,8 +180,8 @@ function BrowserCompat() {
 
 function HowItWorks() {
   useHead(
-    'How It Works \u2014 Supernova HDR PNG Converter',
-    'Learn how Supernova converts standard images to HDR PNGs using PQ (ST 2084) transfer and Rec.2020 gamut.',
+    'How HDR PNG Conversion Works | Supernova',
+    'Learn how this HDR PNG converter uses PQ transfer, Rec.2020 color, and cICP/cHRM/iCCP metadata to produce HDR-ready PNG files.',
     '/how-it-works'
   )
   return (
@@ -190,12 +190,12 @@ function HowItWorks() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M19 12H5m0 0l7 7m-7-7l7-7" />
         </svg>
-        Back
+        Back to HDR PNG Converter
       </a>
 
       {/* Overview — hero-style, no card */}
       <section class="how-hero">
-        <h2>How it works</h2>
+        <h1>How HDR PNG Conversion Works</h1>
         <p>Supernova converts standard images into HDR PNGs that glow on HDR displays — highlights exceed normal brightness, giving photos a vivid, luminous quality. Everything runs in your browser.</p>
       </section>
 
@@ -301,8 +301,8 @@ function HowItWorks() {
 
 function Home() {
   useHead(
-    'Supernova \u2014 HDR PNG Converter',
-    'Convert any image to HDR PNG in your browser. Free, private, no uploads. PQ (ST 2084) transfer with Rec.2020 gamut for HDR10-compatible output.',
+    'HDR PNG Converter: Convert Images to HDR PNG | Supernova',
+    'Convert image files to HDR PNG in your browser with PQ (ST 2084) and Rec.2020 metadata. Upload PNG, JPEG, WebP, or AVIF and download instantly.',
     '/'
   )
   const [image, setImage] = useState<ImageState | null>(null)
@@ -492,6 +492,12 @@ function Home() {
         </>
       )}
 
+      <section class="seo-copy" aria-labelledby="converter-overview-title">
+        <h2 id="converter-overview-title">Convert Images To HDR PNG With PQ (ST 2084)</h2>
+        <p>Supernova is a browser-based HDR PNG converter built for fast local conversion. Drop a PNG, JPEG, WebP, or AVIF image and export an HDR PNG without uploading anything.</p>
+        <p>The output includes PQ transfer and Rec.2020 metadata (cICP, cHRM, iCCP) so highlights can render with extended brightness on supported HDR displays and browsers.</p>
+      </section>
+
       <footer class="trust-badge">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
@@ -503,12 +509,29 @@ function Home() {
   )
 }
 
+function NotFound() {
+  useHead(
+    'Page Not Found | Supernova HDR PNG Converter',
+    'This page could not be found. Return to the Supernova HDR PNG converter.',
+    '/404',
+    { robots: 'noindex,nofollow' }
+  )
+
+  return (
+    <div class="not-found">
+      <h1>Page Not Found</h1>
+      <p>The page you requested does not exist. Go back to the converter to create an HDR PNG.</p>
+      <a class="not-found__link" href="/supernova-image/">Go to HDR PNG Converter</a>
+    </div>
+  )
+}
+
 function Header() {
   const { path } = useLocation()
   const isHome = path === '/' || path === '/supernova-image' || path === '/supernova-image/'
   return (
     <div class="header">
-      <h1>Supernova</h1>
+      {isHome ? <h1>HDR PNG Converter</h1> : <div class="header__brand">Supernova</div>}
       <p>Convert any image to <span class="accent">HDR PNG</span> — runs entirely in your browser</p>
       {isHome && <a class="how-link" href="/supernova-image/how-it-works">How it works</a>}
     </div>
@@ -522,7 +545,8 @@ export function App({ url }: { url?: string }) {
       <Router>
         <Route path="/supernova-image/" component={Home} />
         <Route path="/supernova-image/how-it-works" component={HowItWorks} />
-        <Route default component={Home} />
+        <Route path="/supernova-image/404" component={NotFound} />
+        <Route default component={NotFound} />
       </Router>
     </LocationProvider>
   )

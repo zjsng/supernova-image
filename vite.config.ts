@@ -6,6 +6,7 @@ export default defineConfig({
     prerender: {
       enabled: true,
       renderTarget: '#app',
+      additionalPrerenderRoutes: ['/supernova-image/404'],
     }
   })],
   root: 'src',

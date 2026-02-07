@@ -8,31 +8,48 @@
 
     <!-- Open Graph (static) -->
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Supernova" />
     <meta property="og:image" content="https://zjsng.github.io/supernova-image/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://zjsng.github.io/supernova-image/og-image.png" />
 
     <link rel="icon" type="image/svg+xml" href="/supernova-image/favicon.svg" />
 
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Supernova",
-      "description": "Convert any image to HDR PNG in your browser",
-      "url": "https://zjsng.github.io/supernova-image/",
-      "applicationCategory": "MultimediaApplication",
-      "operatingSystem": "Any",
-      "browserRequirements": "Modern browser with HDR display recommended",
-      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "name": "Supernova",
+          "description": "Convert any image to HDR PNG in your browser",
+          "url": "https://zjsng.github.io/supernova-image/",
+          "applicationCategory": "MultimediaApplication",
+          "operatingSystem": "Any",
+          "browserRequirements": "Modern browser with HDR display recommended",
+          "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        },
+        {
+          "@type": "WebSite",
+          "name": "Supernova",
+          "url": "https://zjsng.github.io/supernova-image/"
+        },
+        {
+          "@type": "Organization",
+          "name": "Supernova",
+          "url": "https://zjsng.github.io/supernova-image/",
+          "logo": "https://zjsng.github.io/supernova-image/og-image.png"
+        }
+      ]
     }
     </script>
   </head>
   <body>
     <div id="app"></div>
     <noscript>
-      <h1>Supernova — HDR PNG Converter</h1>
+      <p><strong>Supernova — HDR PNG Converter</strong></p>
       <p>Convert any image to HDR PNG in your browser. Requires JavaScript.</p>
     </noscript>
     <script type="module" src="./main.tsx" prerender></script>

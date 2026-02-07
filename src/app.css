@@ -55,7 +55,8 @@ body {
   margin-bottom: 2.5rem;
 }
 
-.header h1 {
+.header h1,
+.header__brand {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 2.8rem;
@@ -556,6 +557,10 @@ body {
     font-size: 2rem;
   }
 
+  .header__brand {
+    font-size: 2rem;
+  }
+
   .controls {
     flex-direction: column;
     gap: 1rem;
@@ -586,6 +591,10 @@ body {
 
 @media (max-width: 380px) {
   .header h1 {
+    font-size: 1.75rem;
+  }
+
+  .header__brand {
     font-size: 1.75rem;
   }
 }
@@ -646,7 +655,7 @@ body {
   animation: fadeInUp 0.5s ease both;
 }
 
-.how-hero h2 {
+.how-hero h1 {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 1.6rem;
@@ -700,6 +709,73 @@ body {
 
 .how-section p + p {
   margin-top: 0.5rem;
+}
+
+/* Home SEO copy block */
+.seo-copy {
+  width: 100%;
+  max-width: 640px;
+  margin-top: 1.5rem;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.seo-copy h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.6rem;
+}
+
+.seo-copy p {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.65;
+}
+
+.seo-copy p + p {
+  margin-top: 0.5rem;
+}
+
+/* Not Found */
+.not-found {
+  width: 100%;
+  max-width: 640px;
+  text-align: center;
+  background: var(--surface-glass);
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px);
+  border-radius: var(--radius-md);
+  padding: 2rem 1.5rem;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.not-found h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+
+.not-found p {
+  color: var(--text-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.not-found__link {
+  display: inline-block;
+  margin-top: 1rem;
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .how-section em {
@@ -1035,7 +1111,7 @@ body {
     max-width: 100%;
   }
 
-  .how-hero h2 {
+  .how-hero h1 {
     font-size: 1.3rem;
   }
 

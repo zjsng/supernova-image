@@ -10,6 +10,10 @@ interface HeadData {
   elements: HeadElement[]
 }
 
+interface HeadOptions {
+  robots?: string
+}
+
 let ssrHead: HeadData | null = null
 
 export function startHeadCollection(): void {
@@ -24,13 +28,15 @@ export function flushHead(): HeadData | null {
 
 const BASE_URL = 'https://zjsng.github.io/supernova-image'
 
-export function useHead(title: string, description: string, canonicalPath: string) {
+export function useHead(title: string, description: string, canonicalPath: string, options?: HeadOptions) {
   const canonicalUrl = `${BASE_URL}${canonicalPath}`
+  const robots = options?.robots ?? 'index,follow'
 
   if (ssrHead) {
     ssrHead.title = title
     ssrHead.elements.push({ type: 'meta', props: { name: 'description', content: description } })
     ssrHead.elements.push({ type: 'link', props: { rel: 'canonical', href: canonicalUrl } })
+    ssrHead.elements.push({ type: 'meta', props: { name: 'robots', content: robots } })
     ssrHead.elements.push({ type: 'meta', props: { property: 'og:title', content: title } })
     ssrHead.elements.push({ type: 'meta', props: { property: 'og:description', content: description } })
     ssrHead.elements.push({ type: 'meta', props: { property: 'og:url', content: canonicalUrl } })
@@ -45,6 +51,7 @@ export function useHead(title: string, description: string, canonicalPath: strin
     const updates: [string, string, string][] = [
       ['meta[name="description"]', 'content', description],
       ['link[rel="canonical"]', 'href', canonicalUrl],
+      ['meta[name="robots"]', 'content', robots],
       ['meta[property="og:title"]', 'content', title],
       ['meta[property="og:description"]', 'content', description],
       ['meta[property="og:url"]', 'content', canonicalUrl],
@@ -55,5 +62,5 @@ export function useHead(title: string, description: string, canonicalPath: strin
     for (const [selector, attr, value] of updates) {
       document.querySelector(selector)?.setAttribute(attr, value)
     }
-  }, [title, description, canonicalUrl])
+  }, [title, description, canonicalUrl, robots])
 }
