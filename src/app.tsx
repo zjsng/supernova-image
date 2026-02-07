@@ -3,8 +3,17 @@ import { useState, useRef, useCallback, useEffect } from 'preact/hooks'
 import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
 import { useHead } from './lib/use-head'
 import { BOOST_UI_MAX, BOOST_UI_MIN, boostToTargetNits } from './lib/hdr-boost'
+import {
+  DEFAULT_LOOK_CONTROLS,
+  LOOK_CONTROL_RANGES,
+  PREVIEW_DEBOUNCE_MS,
+  PREVIEW_MAX_LONG_EDGE_DEFAULT,
+  type LookControls,
+} from './lib/look-controls'
 import type {
   WorkerConvertRequest,
+  WorkerPreviewRequest,
+  WorkerPreviewSuccessResponse,
   WorkerResponseMessage,
   WorkerSuccessResponse,
 } from './lib/worker-protocol'
@@ -377,36 +386,80 @@ function Home() {
   )
   const [image, setImage] = useState<ImageState | null>(null)
   const [boost, setBoost] = useState(5)
-  const [gamma, setGamma] = useState(1.0)
+  const [lookControls, setLookControls] = useState<LookControls>(DEFAULT_LOOK_CONTROLS)
   const [processing, setProcessing] = useState(false)
   const [downloaded, setDownloaded] = useState(false)
   const [dragover, setDragover] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [previewPending, setPreviewPending] = useState(false)
+  const [previewReady, setPreviewReady] = useState(false)
+  const decodeCanvasRef = useRef<HTMLCanvasElement>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
+  const previewDebounceTimerRef = useRef<number | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const workerRef = useRef<Worker | null>(null)
   const nextRequestIdRef = useRef(1)
-  const activeRequestIdRef = useRef<number | null>(null)
+  const activeConvertRequestIdRef = useRef<number | null>(null)
+  const activePreviewRequestIdRef = useRef<number | null>(null)
   const workerDecodeSupportRef = useRef<boolean | null>(null)
-  const pendingRef = useRef(
-    new Map<number, {
-      resolve: (value: WorkerSuccessResponse) => void
-      reject: (error: Error) => void
-    }>()
-  )
+  const pendingRef = useRef(new Map<number, {
+    kind: 'convert' | 'preview'
+    resolve: (value: WorkerSuccessResponse | WorkerPreviewSuccessResponse) => void
+    reject: (error: Error) => void
+  }>())
+
+  const clearPreviewDebounce = useCallback(() => {
+    if (previewDebounceTimerRef.current !== null) {
+      window.clearTimeout(previewDebounceTimerRef.current)
+      previewDebounceTimerRef.current = null
+    }
+  }, [])
+
+  const clearPreviewCanvas = useCallback(() => {
+    const canvas = previewCanvasRef.current
+    if (!canvas) {
+      setPreviewReady(false)
+      return
+    }
+    const ctx = canvas.getContext('2d')
+    if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height)
+    setPreviewReady(false)
+  }, [])
+
+  const cancelPendingById = useCallback((id: number, reason: string) => {
+    const pending = pendingRef.current.get(id)
+    if (!pending) return
+    pendingRef.current.delete(id)
+    pending.reject(new Error(reason))
+  }, [])
 
   const getWorker = useCallback((): Worker => {
     if (workerRef.current) return workerRef.current
     const worker = new Worker(new URL('./lib/worker.ts', import.meta.url), { type: 'module' })
     worker.onmessage = (e: MessageEvent<WorkerResponseMessage>) => {
       const message = e.data
-      if (!message || message.type !== 'result') return
+      if (!message) return
       const pending = pendingRef.current.get(message.id)
       if (!pending) return
       pendingRef.current.delete(message.id)
-      if (activeRequestIdRef.current === message.id) activeRequestIdRef.current = null
+
+      if (pending.kind === 'convert' && activeConvertRequestIdRef.current === message.id) {
+        activeConvertRequestIdRef.current = null
+      }
+      if (pending.kind === 'preview' && activePreviewRequestIdRef.current === message.id) {
+        activePreviewRequestIdRef.current = null
+      }
+
+      if (pending.kind === 'convert' && message.type !== 'result') {
+        pending.reject(new Error('Worker responded with mismatched message type for convert request'))
+        return
+      }
+      if (pending.kind === 'preview' && message.type !== 'preview-result') {
+        pending.reject(new Error('Worker responded with mismatched message type for preview request'))
+        return
+      }
 
       if (message.ok) {
-        pending.resolve(message)
+        pending.resolve(message as WorkerSuccessResponse | WorkerPreviewSuccessResponse)
         return
       }
 
@@ -419,28 +472,44 @@ function Home() {
         pending.reject(new Error(`Worker failed while processing request ${id}`))
       }
       pendingRef.current.clear()
-      activeRequestIdRef.current = null
+      activeConvertRequestIdRef.current = null
+      activePreviewRequestIdRef.current = null
       workerRef.current?.terminate()
       workerRef.current = null
     }
     workerRef.current = worker
     return worker
-  }, [])
+  }, [cancelPendingById])
+
+  const cancelActivePreview = useCallback(() => {
+    const activeId = activePreviewRequestIdRef.current
+    const worker = workerRef.current
+    if (activeId === null || !worker) return
+    worker.postMessage({ type: 'cancel', id: activeId })
+    cancelPendingById(activeId, 'Preview request cancelled')
+    activePreviewRequestIdRef.current = null
+  }, [cancelPendingById])
 
   useEffect(() => {
     return () => {
+      clearPreviewDebounce()
       workerRef.current?.terminate()
       workerRef.current = null
       for (const pending of pendingRef.current.values()) {
         pending.reject(new Error('Worker closed before conversion completed'))
       }
       pendingRef.current.clear()
-      activeRequestIdRef.current = null
+      activeConvertRequestIdRef.current = null
+      activePreviewRequestIdRef.current = null
     }
-  }, [])
+  }, [clearPreviewDebounce])
 
   const loadImage = useCallback((file: File) => {
     if (!file || !file.type.startsWith('image/')) return
+    cancelActivePreview()
+    clearPreviewDebounce()
+    setPreviewPending(false)
+    clearPreviewCanvas()
     if (image?.src) URL.revokeObjectURL(image.src)
     const url = URL.createObjectURL(file)
     const img = new Image()
@@ -448,7 +517,7 @@ function Home() {
       setImage({ src: url, name: file.name, width: img.width, height: img.height, file, el: img })
     }
     img.src = url
-  }, [image])
+  }, [cancelActivePreview, clearPreviewCanvas, clearPreviewDebounce, image])
 
   const handleDrop = useCallback((e: DragEvent) => {
     e.preventDefault()
@@ -477,15 +546,19 @@ function Home() {
 
   const reset = useCallback(() => {
     if (image?.src) URL.revokeObjectURL(image.src)
+    cancelActivePreview()
+    clearPreviewDebounce()
+    setPreviewPending(false)
+    clearPreviewCanvas()
     setImage(null)
-  }, [image])
+  }, [cancelActivePreview, clearPreviewCanvas, clearPreviewDebounce, image])
 
   const decodePixelsOnMainThread = useCallback((img: ImageState): {
     pixels: Uint8ClampedArray
     width: number
     height: number
   } => {
-    const canvas = canvasRef.current
+    const canvas = decodeCanvasRef.current
     if (!canvas) throw new Error('Canvas is unavailable for decode fallback')
     canvas.width = img.width
     canvas.height = img.height
@@ -496,27 +569,140 @@ function Home() {
     return { pixels: imageData.data, width: img.width, height: img.height }
   }, [])
 
+  const setLookControl = useCallback((key: keyof LookControls, value: number) => {
+    setLookControls((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
   const runWorkerConvert = useCallback((
     payload: Omit<WorkerConvertRequest, 'type' | 'id'>,
     transfer: Transferable[] = [],
   ): Promise<WorkerSuccessResponse> => {
     const worker = getWorker()
     const id = nextRequestIdRef.current++
-    const priorActiveId = activeRequestIdRef.current
+    const priorActiveId = activeConvertRequestIdRef.current
     if (priorActiveId !== null) {
       worker.postMessage({ type: 'cancel', id: priorActiveId })
+      cancelPendingById(priorActiveId, 'Previous convert request cancelled')
     }
-    activeRequestIdRef.current = id
+    activeConvertRequestIdRef.current = id
 
     return new Promise((resolve, reject) => {
-      pendingRef.current.set(id, { resolve, reject })
+      pendingRef.current.set(id, {
+        kind: 'convert',
+        resolve: resolve as (value: WorkerSuccessResponse | WorkerPreviewSuccessResponse) => void,
+        reject,
+      })
       worker.postMessage({ type: 'convert', id, ...payload }, transfer)
     })
-  }, [getWorker])
+  }, [cancelPendingById, getWorker])
+
+  const runWorkerPreview = useCallback((
+    payload: Omit<WorkerPreviewRequest, 'type' | 'id'>,
+    transfer: Transferable[] = [],
+  ): Promise<WorkerPreviewSuccessResponse> => {
+    const worker = getWorker()
+    const id = nextRequestIdRef.current++
+    const priorActiveId = activePreviewRequestIdRef.current
+    if (priorActiveId !== null) {
+      worker.postMessage({ type: 'cancel', id: priorActiveId })
+      cancelPendingById(priorActiveId, 'Previous preview request cancelled')
+    }
+    activePreviewRequestIdRef.current = id
+
+    return new Promise((resolve, reject) => {
+      pendingRef.current.set(id, {
+        kind: 'preview',
+        resolve: resolve as (value: WorkerSuccessResponse | WorkerPreviewSuccessResponse) => void,
+        reject,
+      })
+      worker.postMessage({ type: 'preview', id, ...payload }, transfer)
+    })
+  }, [cancelPendingById, getWorker])
+
+  const drawPreview = useCallback((result: WorkerPreviewSuccessResponse) => {
+    const canvas = previewCanvasRef.current
+    if (!canvas) return
+    canvas.width = result.width
+    canvas.height = result.height
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return
+    ctx.putImageData(new ImageData(result.pixels, result.width, result.height), 0, 0)
+    setPreviewReady(true)
+  }, [])
+
+  const requestPreview = useCallback(async (img: ImageState) => {
+    setPreviewPending(true)
+
+    try {
+      let result: WorkerPreviewSuccessResponse
+      const shouldTryWorkerDecode = img.file && workerDecodeSupportRef.current !== false
+
+      if (shouldTryWorkerDecode) {
+        try {
+          result = await runWorkerPreview({
+            file: img.file,
+            boost: BOOST_UI_MIN,
+            lookControls,
+            previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
+          })
+          workerDecodeSupportRef.current = true
+        } catch (err) {
+          const code = (err as Error & { code?: string }).code
+          if (code !== 'DECODE_UNSUPPORTED') throw err
+          workerDecodeSupportRef.current = false
+          const { pixels, width, height } = decodePixelsOnMainThread(img)
+          result = await runWorkerPreview(
+            {
+              pixels,
+              width,
+              height,
+              boost: BOOST_UI_MIN,
+              lookControls,
+              previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
+            },
+            [pixels.buffer],
+          )
+        }
+      } else {
+        const { pixels, width, height } = decodePixelsOnMainThread(img)
+        result = await runWorkerPreview(
+          {
+            pixels,
+            width,
+            height,
+            boost: BOOST_UI_MIN,
+            lookControls,
+            previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
+          },
+          [pixels.buffer],
+        )
+      }
+
+      drawPreview(result)
+    } catch (error) {
+      const message = (error as Error).message.toLowerCase()
+      if (!message.includes('cancelled')) {
+        console.error(error)
+      }
+    } finally {
+      setPreviewPending(false)
+    }
+  }, [decodePixelsOnMainThread, drawPreview, lookControls, runWorkerPreview])
+
+  useEffect(() => {
+    if (!image || processing) return
+    clearPreviewDebounce()
+    previewDebounceTimerRef.current = window.setTimeout(() => {
+      void requestPreview(image)
+    }, PREVIEW_DEBOUNCE_MS)
+    return clearPreviewDebounce
+  }, [clearPreviewDebounce, image, lookControls, processing, requestPreview])
 
   const convert = useCallback(async () => {
     if (!image) return
     setProcessing(true)
+    cancelActivePreview()
+    clearPreviewDebounce()
 
     try {
       const collectStats = import.meta.env.DEV
@@ -528,7 +714,7 @@ function Home() {
           result = await runWorkerConvert({
             file: image.file,
             boost,
-            gamma,
+            lookControls,
             collectStats,
           })
           workerDecodeSupportRef.current = true
@@ -538,14 +724,14 @@ function Home() {
           workerDecodeSupportRef.current = false
           const { pixels, width, height } = decodePixelsOnMainThread(image)
           result = await runWorkerConvert(
-            { pixels, width, height, boost, gamma, collectStats },
+            { pixels, width, height, boost, lookControls, collectStats },
             [pixels.buffer],
           )
         }
       } else {
         const { pixels, width, height } = decodePixelsOnMainThread(image)
         result = await runWorkerConvert(
-          { pixels, width, height, boost, gamma, collectStats },
+          { pixels, width, height, boost, lookControls, collectStats },
           [pixels.buffer],
         )
       }
@@ -574,10 +760,12 @@ function Home() {
       URL.revokeObjectURL(url)
       setDownloaded(true)
       setTimeout(() => setDownloaded(false), 2500)
+    } catch (error) {
+      console.error(error)
     } finally {
       setProcessing(false)
     }
-  }, [image, boost, gamma, decodePixelsOnMainThread, runWorkerConvert])
+  }, [boost, cancelActivePreview, clearPreviewDebounce, decodePixelsOnMainThread, image, lookControls, runWorkerConvert])
 
   return (
     <>
@@ -611,12 +799,28 @@ function Home() {
       ) : (
         <div class="preview-wrapper">
           <div class="preview-container">
-            <img src={image.src} alt="Preview" />
-            <canvas ref={canvasRef} />
-            {processing && (
+            <div class="preview-compare" style={{ '--img-ratio': `${image.width} / ${image.height}` } as any}>
+              <figure class="preview-panel">
+                <figcaption class="preview-panel__label">Before</figcaption>
+                <img src={image.src} alt="Original preview" />
+              </figure>
+              <figure class="preview-panel">
+                <figcaption class="preview-panel__label">After</figcaption>
+                <div class="preview-output">
+                  <canvas ref={previewCanvasRef} class="preview-output-canvas" />
+                  {!previewReady && (
+                    <div class="preview-placeholder">
+                      Adjust controls to render preview
+                    </div>
+                  )}
+                </div>
+              </figure>
+            </div>
+            <canvas ref={decodeCanvasRef} class="preview-decode-canvas" />
+            {(processing || previewPending) && (
               <div class="processing-overlay">
                 <div class="scan-bar" />
-                <span class="processing-text">Converting</span>
+                <span class="processing-text">{processing ? 'Converting' : 'Updating Preview'}</span>
               </div>
             )}
           </div>
@@ -641,20 +845,97 @@ function Home() {
               <span class="value">{boost.toFixed(1)} · ~{Math.round(boostToTargetNits(boost)).toLocaleString()} nits</span>
             </div>
             <div class="control-group">
-              <label htmlFor="gamma-range">Gamma</label>
+              <label htmlFor="saturation-range">Saturation</label>
               <input
-                id="gamma-range"
+                id="saturation-range"
                 type="range"
-                min="0.1"
-                max="3.0"
-                step="0.1"
-                value={gamma}
-                onInput={(e) => setGamma(Number((e.target as HTMLInputElement).value))}
-                style={{ background: rangeBackground(gamma, 0.1, 3.0) }}
+                min={LOOK_CONTROL_RANGES.saturation.min}
+                max={LOOK_CONTROL_RANGES.saturation.max}
+                step={LOOK_CONTROL_RANGES.saturation.step}
+                value={lookControls.saturation}
+                onInput={(e) => setLookControl('saturation', Number((e.target as HTMLInputElement).value))}
+                style={{ background: rangeBackground(lookControls.saturation, LOOK_CONTROL_RANGES.saturation.min, LOOK_CONTROL_RANGES.saturation.max) }}
               />
-              <span class="value">{gamma.toFixed(1)}</span>
+              <span class="value">{lookControls.saturation.toFixed(2)}</span>
             </div>
           </div>
+          <div class="preview-note">Preview is SDR approximation. Boost affects final HDR export.</div>
+
+          <details class="advanced-controls">
+            <summary>Advanced</summary>
+            <div class="advanced-controls__grid">
+              <div class="control-group">
+                <label htmlFor="gamma-range">Gamma</label>
+                <input
+                  id="gamma-range"
+                  type="range"
+                  min={LOOK_CONTROL_RANGES.gamma.min}
+                  max={LOOK_CONTROL_RANGES.gamma.max}
+                  step={LOOK_CONTROL_RANGES.gamma.step}
+                  value={lookControls.gamma}
+                  onInput={(e) => setLookControl('gamma', Number((e.target as HTMLInputElement).value))}
+                  style={{ background: rangeBackground(lookControls.gamma, LOOK_CONTROL_RANGES.gamma.min, LOOK_CONTROL_RANGES.gamma.max) }}
+                />
+                <span class="value">{lookControls.gamma.toFixed(1)}</span>
+              </div>
+              <div class="control-group">
+                <label htmlFor="contrast-range">Contrast</label>
+                <input
+                  id="contrast-range"
+                  type="range"
+                  min={LOOK_CONTROL_RANGES.contrast.min}
+                  max={LOOK_CONTROL_RANGES.contrast.max}
+                  step={LOOK_CONTROL_RANGES.contrast.step}
+                  value={lookControls.contrast}
+                  onInput={(e) => setLookControl('contrast', Number((e.target as HTMLInputElement).value))}
+                  style={{ background: rangeBackground(lookControls.contrast, LOOK_CONTROL_RANGES.contrast.min, LOOK_CONTROL_RANGES.contrast.max) }}
+                />
+                <span class="value">{lookControls.contrast.toFixed(2)}</span>
+              </div>
+              <div class="control-group">
+                <label htmlFor="rolloff-range">Highlight Roll-off</label>
+                <input
+                  id="rolloff-range"
+                  type="range"
+                  min={LOOK_CONTROL_RANGES.highlightRollOff.min}
+                  max={LOOK_CONTROL_RANGES.highlightRollOff.max}
+                  step={LOOK_CONTROL_RANGES.highlightRollOff.step}
+                  value={lookControls.highlightRollOff}
+                  onInput={(e) => setLookControl('highlightRollOff', Number((e.target as HTMLInputElement).value))}
+                  style={{ background: rangeBackground(lookControls.highlightRollOff, LOOK_CONTROL_RANGES.highlightRollOff.min, LOOK_CONTROL_RANGES.highlightRollOff.max) }}
+                />
+                <span class="value">{lookControls.highlightRollOff.toFixed(2)}</span>
+              </div>
+              <div class="control-group">
+                <label htmlFor="shadow-range">Shadow Lift</label>
+                <input
+                  id="shadow-range"
+                  type="range"
+                  min={LOOK_CONTROL_RANGES.shadowLift.min}
+                  max={LOOK_CONTROL_RANGES.shadowLift.max}
+                  step={LOOK_CONTROL_RANGES.shadowLift.step}
+                  value={lookControls.shadowLift}
+                  onInput={(e) => setLookControl('shadowLift', Number((e.target as HTMLInputElement).value))}
+                  style={{ background: rangeBackground(lookControls.shadowLift, LOOK_CONTROL_RANGES.shadowLift.min, LOOK_CONTROL_RANGES.shadowLift.max) }}
+                />
+                <span class="value">{lookControls.shadowLift.toFixed(2)}</span>
+              </div>
+              <div class="control-group">
+                <label htmlFor="vibrance-range">Vibrance</label>
+                <input
+                  id="vibrance-range"
+                  type="range"
+                  min={LOOK_CONTROL_RANGES.vibrance.min}
+                  max={LOOK_CONTROL_RANGES.vibrance.max}
+                  step={LOOK_CONTROL_RANGES.vibrance.step}
+                  value={lookControls.vibrance}
+                  onInput={(e) => setLookControl('vibrance', Number((e.target as HTMLInputElement).value))}
+                  style={{ background: rangeBackground(lookControls.vibrance, LOOK_CONTROL_RANGES.vibrance.min, LOOK_CONTROL_RANGES.vibrance.max) }}
+                />
+                <span class="value">{lookControls.vibrance.toFixed(2)}</span>
+              </div>
+            </div>
+          </details>
 
           <div class="btn-row">
             <button class="btn btn-secondary" onClick={reset}>

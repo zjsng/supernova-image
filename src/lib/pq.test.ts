@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import {
   pqEncodeDebug,
+  processPreviewPixels,
   processPixels,
   setPQEncodeModeForTesting,
   srgbEOTF,
   SRGB_TO_BT2020,
 } from './pq'
 import { boostToPQGain } from './hdr-boost'
+import { DEFAULT_LOOK_CONTROLS } from './look-controls'
 
 // Expected PQ code values for calibrated diffuse white levels.
 const WHITE_AT_100_NITS_PQ_U16 = 33297 // PQ(0.01) * 65535
@@ -214,5 +216,91 @@ describe('PQ LUT fast path', () => {
       const result = processPixels(pixel(255, 255, 255), boost)
       expect(Math.abs(result[0] - expected)).toBeLessThanOrEqual(2)
     }
+  })
+})
+
+describe('preview processing path', () => {
+  it('keeps SDR diffuse white visually bright at boost=1', () => {
+    const white = processPreviewPixels(pixel(255, 255, 255), 1.0, DEFAULT_LOOK_CONTROLS)
+    expect(white[0]).toBeGreaterThanOrEqual(230)
+    expect(white[1]).toBeGreaterThanOrEqual(230)
+    expect(white[2]).toBeGreaterThanOrEqual(230)
+  })
+
+  it('does not apply HDR boost in preview path', () => {
+    const sample = pixel(180, 120, 80)
+    const low = processPreviewPixels(sample, 1.0, DEFAULT_LOOK_CONTROLS)
+    const high = processPreviewPixels(sample, 10.0, DEFAULT_LOOK_CONTROLS)
+    expect([...high]).toEqual([...low])
+  })
+
+  it('is deterministic with neutral look controls', () => {
+    const sample = pixel(120, 80, 200)
+    const a = processPreviewPixels(sample, 1.0, DEFAULT_LOOK_CONTROLS)
+    const b = processPreviewPixels(sample, 1.0, DEFAULT_LOOK_CONTROLS)
+    expect([...a]).toEqual([...b])
+  })
+
+  it('keeps outputs in uint8 RGBA bounds under extreme settings', () => {
+    const sample = pixel(255, 200, 64)
+    const out = processPreviewPixels(sample, 200, {
+      saturation: 1.6,
+      gamma: 0.1,
+      contrast: 1.35,
+      highlightRollOff: 1.4,
+      shadowLift: 0.25,
+      vibrance: 1.5,
+    })
+    for (const channel of out) {
+      expect(channel).toBeGreaterThanOrEqual(0)
+      expect(channel).toBeLessThanOrEqual(255)
+    }
+    expect(out[3]).toBe(255)
+  })
+
+  it('higher saturation increases chroma spread in preview output', () => {
+    const sample = pixel(210, 150, 100)
+    const neutral = processPreviewPixels(sample, 4, DEFAULT_LOOK_CONTROLS)
+    const saturated = processPreviewPixels(sample, 4, { ...DEFAULT_LOOK_CONTROLS, saturation: 1.5 })
+    const neutralSpread = Math.max(neutral[0], neutral[1], neutral[2]) - Math.min(neutral[0], neutral[1], neutral[2])
+    const saturatedSpread = Math.max(saturated[0], saturated[1], saturated[2]) - Math.min(saturated[0], saturated[1], saturated[2])
+    expect(saturatedSpread).toBeGreaterThanOrEqual(neutralSpread)
+  })
+
+  it('higher contrast increases luminance distance from neutral gray', () => {
+    const sample = pixel(140, 120, 100)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const contrasty = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, contrast: 1.35 })
+
+    const neutralLuma = 0.2627 * neutral[0] + 0.6780 * neutral[1] + 0.0593 * neutral[2]
+    const contrastLuma = 0.2627 * contrasty[0] + 0.6780 * contrasty[1] + 0.0593 * contrasty[2]
+    expect(Math.abs(contrastLuma - 128)).toBeGreaterThanOrEqual(Math.abs(neutralLuma - 128))
+  })
+
+  it('shadow lift brightens dark pixels', () => {
+    const sample = pixel(12, 12, 12)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const lifted = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
+    expect(lifted[0]).toBeGreaterThanOrEqual(neutral[0])
+    expect(lifted[1]).toBeGreaterThanOrEqual(neutral[1])
+    expect(lifted[2]).toBeGreaterThanOrEqual(neutral[2])
+  })
+
+  it('highlight roll-off reduces preview clipping tendency at high boost', () => {
+    const sample = pixel(255, 235, 210)
+    const lowRolloff = processPreviewPixels(sample, 10, { ...DEFAULT_LOOK_CONTROLS, highlightRollOff: 0.7 })
+    const highRolloff = processPreviewPixels(sample, 10, { ...DEFAULT_LOOK_CONTROLS, highlightRollOff: 1.4 })
+    const lowPeak = Math.max(lowRolloff[0], lowRolloff[1], lowRolloff[2])
+    const highPeak = Math.max(highRolloff[0], highRolloff[1], highRolloff[2])
+    expect(highPeak).toBeLessThanOrEqual(lowPeak)
+  })
+
+  it('vibrance increases muted-color spread', () => {
+    const sample = pixel(140, 130, 120)
+    const neutral = processPreviewPixels(sample, 3, DEFAULT_LOOK_CONTROLS)
+    const vibrant = processPreviewPixels(sample, 3, { ...DEFAULT_LOOK_CONTROLS, vibrance: 1.5 })
+    const neutralSpread = Math.max(neutral[0], neutral[1], neutral[2]) - Math.min(neutral[0], neutral[1], neutral[2])
+    const vibrantSpread = Math.max(vibrant[0], vibrant[1], vibrant[2]) - Math.min(vibrant[0], vibrant[1], vibrant[2])
+    expect(vibrantSpread).toBeGreaterThanOrEqual(neutralSpread)
   })
 })
