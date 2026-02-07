@@ -25,4 +25,6 @@ bun run dev
 bun run build
 ```
 
-Output goes to `dist/`. Both `/` and `/how-it-works` are prerendered at build time.
+Output goes to `dist/`.
+
+For GitHub Pages project-site routing, the build step normalizes prerendered pages into root-relative paths in `dist/` (for example, `dist/how-it-works/index.html`) and generates `dist/404.html` from `dist/index.html` for SPA fallback behavior.

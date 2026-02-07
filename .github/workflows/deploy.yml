@@ -25,6 +25,28 @@ jobs:
 
       - run: bun run build
 
+      - name: Verify Pages artifact routes
+        run: |
+          set -euo pipefail
+
+          missing=0
+
+          if [ ! -f dist/how-it-works/index.html ]; then
+            echo "Missing dist/how-it-works/index.html"
+            missing=1
+          fi
+
+          if [ ! -f dist/404.html ]; then
+            echo "Missing dist/404.html"
+            missing=1
+          fi
+
+          if [ "$missing" -ne 0 ]; then
+            echo "Current dist files:"
+            find dist -maxdepth 3 -type f | sort
+            exit 1
+          fi
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
