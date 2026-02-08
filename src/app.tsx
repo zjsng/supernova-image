@@ -262,7 +262,7 @@ function RevealSection({ children, className = '' }: RevealSectionProps) {
 function HowItWorks() {
   useHead(
     'How HDR PNG Conversion Works | Supernova',
-    'Learn how this HDR PNG converter uses PQ transfer, Rec.2020 color, and cICP/cHRM/iCCP metadata to produce HDR-ready PNG files.',
+    'Learn how this HDR PNG converter uses live SDR preview, look controls, PQ transfer, Rec.2020 color, and cICP/cHRM/iCCP metadata to produce HDR-ready PNG files.',
     '/how-it-works'
   )
   return (
@@ -275,7 +275,7 @@ function HowItWorks() {
       {/* Overview — hero-style, no card */}
       <section class="how-hero">
         <h1>How HDR PNG Conversion Works</h1>
-        <p>Supernova converts standard images into HDR PNGs that glow on HDR displays — highlights exceed normal brightness, giving photos a vivid, luminous quality. Everything runs in your browser.</p>
+        <p>Supernova converts standard images into HDR PNGs that glow on HDR displays. You get a fast live SDR before/after preview while editing, then the final download is encoded with full HDR PQ brightness and metadata.</p>
       </section>
 
       {/* Pipeline — full-width flow diagram */}
@@ -284,8 +284,9 @@ function HowItWorks() {
         <PipelineFlow />
         <div class="pipeline-steps">
           <div class="pipeline-step-text"><strong>1.</strong> Decode your image into raw 8-bit RGBA pixels via Canvas</div>
-          <div class="pipeline-step-text"><strong>2.</strong> Linearize, map SDR diffuse white (~100 nits), perceptually remap boost up to 10,000 nits, apply adaptive highlight roll-off, then PQ-encode to 16-bit</div>
-          <div class="pipeline-step-text"><strong>3.</strong> Wrap in a PNG with HDR metadata chunks (cICP, cHRM, iCCP)</div>
+          <div class="pipeline-step-text"><strong>2.</strong> Live preview path: run a fast SDR approximation on a downscaled copy for responsive before/after updates</div>
+          <div class="pipeline-step-text"><strong>3.</strong> Export path: apply look controls in linear light, remap boost to HDR luminance, then PQ-encode to 16-bit BT.2020</div>
+          <div class="pipeline-step-text"><strong>4.</strong> Wrap in a PNG with HDR metadata chunks (cICP, cHRM, iCCP)</div>
         </div>
       </RevealSection>
 
@@ -293,8 +294,10 @@ function HowItWorks() {
       <RevealSection className="how-section">
         <h2>The Controls</h2>
         <ul class="how-meta-list">
-          <li><strong>Boost</strong> — uses a perceptual remap from a 100-nit baseline so high values feel punchier (1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits).</li>
-          <li><strong>Gamma</strong> — adjusts the sRGB decode curve before boosting. Values below 1.0 lighten midtones, above 1.0 darken them.</li>
+          <li><strong>Boost</strong> — HDR export brightness control. 1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits in the final PNG.</li>
+          <li><strong>Saturation</strong> — primary color intensity control shown in the main panel for quick edits.</li>
+          <li><strong>Advanced</strong> — Gamma, Contrast, Highlight Roll-off, Shadow Lift, and Vibrance for finer grading.</li>
+          <li><strong>Preview behavior</strong> — preview is SDR approximation for speed; it does not display final HDR luminance boost exactly.</li>
         </ul>
       </RevealSection>
 
@@ -362,6 +365,14 @@ function HowItWorks() {
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Chrome and Edge render HDR PNGs via cICP. Safari on macOS uses the ICC profile for EDR. Firefox doesn't yet support extended brightness. On SDR displays, the image renders as a normal PNG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Why does preview brightness differ from the final HDR download?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The editor preview is a fast SDR approximation for responsive slider updates. The downloaded PNG uses the full HDR pipeline with PQ brightness and Rec.2020 metadata, so highlights can be much brighter on HDR displays."
             }
           },
           {
