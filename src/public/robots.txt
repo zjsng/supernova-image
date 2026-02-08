@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://zjsng.github.io/supernova-image/sitemap.xml

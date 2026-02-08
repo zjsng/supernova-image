@@ -5,10 +5,23 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts",
-    "build": "vite build --config vite.config.ts && node scripts/prepare-pages-artifact.mjs && node scripts/seo-check.mjs",
-    "test": "vitest run",
+    "build": "node scripts/validate-config.mjs && node scripts/verify-site-config-sync.mjs && vite build --config vite.config.ts && node scripts/prepare-pages-artifact.mjs && node scripts/seo-check.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx,.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "e2e": "playwright test",
+    "e2e:ci": "playwright test --reporter=line",
     "bench:hdr": "bun run scripts/benchmark-hdr.ts",
-    "seo:check": "node scripts/seo-check.mjs"
+    "bench:compare": "bun run scripts/verify-benchmark-report.ts",
+    "perf:pr": "BENCH_PROFILE=pr BENCH_BASELINE_BACKEND=fflate BENCH_CASE_TIMEOUT_MS=60000 bun run bench:hdr && BENCH_REQUIRE_BASELINE=true BENCH_MAX_REGRESSION_PCT=25 BENCH_MAX_SIZE_REGRESSION_PCT=0 bun run bench:compare",
+    "check": "bun run config:verify && bun run site:verify && bun run lint && bun run format:check && bun run typecheck && bun run test:coverage && bun run build && bun run pages:verify",
+    "config:verify": "node scripts/validate-config.mjs",
+    "seo:check": "node scripts/seo-check.mjs",
+    "pages:verify": "node scripts/verify-pages-artifact.mjs",
+    "site:verify": "node scripts/verify-site-config-sync.mjs"
   },
   "dependencies": {
     "@fontsource/outfit": "^5.2.8",
@@ -18,9 +31,17 @@
     "preact-iso": "^2.11.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.58.2",
     "@preact/preset-vite": "^2.10.3",
     "@types/node": "^25.2.1",
+    "@vitest/coverage-v8": "^4.0.18",
+    "eslint": "^10.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.3.0",
+    "prettier": "^3.8.1",
     "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
     "vite": "^7.3.1",
     "vitest": "^4.0.18"
   }

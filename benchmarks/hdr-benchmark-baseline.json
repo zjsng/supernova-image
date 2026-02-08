@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-02-08T06:35:19.777Z",
+  "baseline": {
+    "config": {
+      "name": "baseline-fflate-l6",
+      "backend": "fflate",
+      "level": 6
+    },
+    "caseResults": [
+      {
+        "caseName": "2MP-low",
+        "decodeMs": 20.128791,
+        "processMs": 41.448333999999996,
+        "encodeMs": 142.99283300000002,
+        "totalMs": 204.569958,
+        "outputBytes": 1669846
+      },
+      {
+        "caseName": "2MP-high",
+        "decodeMs": 15.481750000000005,
+        "processMs": 106.812083,
+        "encodeMs": 167.90470899999997,
+        "totalMs": 290.198542,
+        "outputBytes": 12086788
+      }
+    ],
+    "medianTotalMs": 247.38425,
+    "medianOutputBytes": 6878317
+  },
+  "candidates": [
+    {
+      "config": {
+        "name": "fflate-l5",
+        "backend": "fflate",
+        "level": 5
+      },
+      "caseResults": [
+        {
+          "caseName": "2MP-low",
+          "decodeMs": 20.177374999999984,
+          "processMs": 29.957208000000037,
+          "encodeMs": 113.77370799999994,
+          "totalMs": 163.90829099999996,
+          "outputBytes": 1690213
+        },
+        {
+          "caseName": "2MP-high",
+          "decodeMs": 35.93791599999997,
+          "processMs": 73.96349999999995,
+          "encodeMs": 160.45550000000003,
+          "totalMs": 270.35691599999996,
+          "outputBytes": 12086788
+        }
+      ],
+      "medianTotalMs": 217.13260349999996,
+      "medianOutputBytes": 6888500.5
+    },
+    {
+      "config": {
+        "name": "fflate-l6",
+        "backend": "fflate",
+        "level": 6
+      },
+      "caseResults": [
+        {
+          "caseName": "2MP-low",
+          "decodeMs": 17.766208000000006,
+          "processMs": 30.45579100000009,
+          "encodeMs": 115.20950000000005,
+          "totalMs": 163.43149900000014,
+          "outputBytes": 1669846
+        },
+        {
+          "caseName": "2MP-high",
+          "decodeMs": 33.33745900000008,
+          "processMs": 73.43333400000006,
+          "encodeMs": 162.07600000000002,
+          "totalMs": 268.84679300000016,
+          "outputBytes": 12086788
+        }
+      ],
+      "medianTotalMs": 216.13914600000015,
+      "medianOutputBytes": 6878317
+    }
+  ],
+  "selected": {
+    "name": "fflate-l6",
+    "backend": "fflate",
+    "level": 6
+  }
+}

@@ -22,17 +22,25 @@ const DEFAULT_IDAT_ZLIB_LEVEL = 6
 const ICC_ZLIB_LEVEL = 9
 
 export type CompressionBackend = 'fflate' | 'compression-stream'
+type ZlibLevel = Exclude<ZlibOptions['level'], undefined>
+
+function normalizeZlibLevel(level: number): ZlibLevel {
+  const rounded = Math.round(level)
+  if (rounded <= 0) return 0
+  if (rounded >= 9) return 9
+  return rounded as ZlibLevel
+}
 
 function deflateFflate(data: Uint8Array, level = DEFAULT_IDAT_ZLIB_LEVEL): Uint8Array {
-  const opts: ZlibOptions = { level, mem: 8 }
+  const opts: ZlibOptions = { level: normalizeZlibLevel(level), mem: 8 }
   return zlibSync(data, opts)
 }
 
 async function deflateCompressionStream(data: Uint8Array): Promise<Uint8Array> {
   const cs = new CompressionStream('deflate')
   const writer = cs.writable.getWriter()
-  writer.write(data)
-  writer.close()
+  await writer.write(new Uint8Array(data))
+  await writer.close()
   const chunks: Uint8Array[] = []
   const reader = cs.readable.getReader()
   while (true) {
@@ -51,14 +59,8 @@ async function deflateCompressionStream(data: Uint8Array): Promise<Uint8Array> {
   return result
 }
 
-async function deflate(
-  data: Uint8Array,
-  backend: CompressionBackend,
-  level = DEFAULT_IDAT_ZLIB_LEVEL,
-): Promise<Uint8Array> {
-  return backend === 'compression-stream'
-    ? deflateCompressionStream(data)
-    : deflateFflate(data, level)
+async function deflate(data: Uint8Array, backend: CompressionBackend, level = DEFAULT_IDAT_ZLIB_LEVEL): Promise<Uint8Array> {
+  return backend === 'compression-stream' ? deflateCompressionStream(data) : deflateFflate(data, level)
 }
 
 // 8-byte PNG file signature — identifies the file as PNG and detects transmission errors
@@ -69,18 +71,19 @@ const crcTable = new Uint32Array(256)
 for (let n = 0; n < 256; n++) {
   let c = n
   for (let k = 0; k < 8; k++) {
-    c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1)
+    c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1
   }
   crcTable[n] = c
 }
 
 // Standard CRC32 used by PNG for chunk integrity verification
 function crc32(buf: Uint8Array): number {
-  let crc = 0xFFFFFFFF
+  let crc = 0xffffffff
   for (let i = 0; i < buf.length; i++) {
-    crc = crcTable[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8)
+    const byte = buf[i] ?? 0
+    crc = (crcTable[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8)
   }
-  return (crc ^ 0xFFFFFFFF) >>> 0
+  return (crc ^ 0xffffffff) >>> 0
 }
 
 /**
@@ -115,11 +118,11 @@ function makeIHDR(width: number, height: number): Uint8Array {
   const view = new DataView(data.buffer)
   view.setUint32(0, width)
   view.setUint32(4, height)
-  data[8] = 16  // bit depth
-  data[9] = 2   // color type: RGB
-  data[10] = 0  // compression
-  data[11] = 0  // filter
-  data[12] = 0  // interlace
+  data[8] = 16 // bit depth
+  data[9] = 2 // color type: RGB
+  data[10] = 0 // compression
+  data[11] = 0 // filter
+  data[12] = 0 // interlace
   return makeChunk('IHDR', data)
 }
 
@@ -145,10 +148,14 @@ function makeCHRM(): Uint8Array {
   const data = new Uint8Array(32)
   const view = new DataView(data.buffer)
   const vals = [
-    31270, 32900, // white point (D65 illuminant)
-    70800, 29200, // red primary   (deeper red than sRGB)
-    17000, 79700, // green primary (much wider than sRGB)
-    13100, 4600,  // blue primary  (slightly shifted from sRGB)
+    31270,
+    32900, // white point (D65 illuminant)
+    70800,
+    29200, // red primary   (deeper red than sRGB)
+    17000,
+    79700, // green primary (much wider than sRGB)
+    13100,
+    4600, // blue primary  (slightly shifted from sRGB)
   ]
   vals.forEach((v, i) => view.setUint32(i * 4, v))
   return makeChunk('cHRM', data)
@@ -173,7 +180,7 @@ async function makeICCPWithBackend(backend: CompressionBackend): Promise<Uint8Ar
       // iCCP data format: profile name + null terminator + compression method (0=deflate) + compressed profile
       const data = new Uint8Array(name.length + 2 + compressed.length)
       data.set(name, 0)
-      data[name.length] = 0     // null separator
+      data[name.length] = 0 // null separator
       data[name.length + 1] = 0 // compression method: deflate
       data.set(compressed, name.length + 2)
       return makeChunk('iCCP', data)
@@ -214,15 +221,15 @@ async function makeIDAT(
     let ri = rowOffset + 1
     for (let x = 0; x < width; x++) {
       // Big-endian 16-bit per channel
-      const r = pqPixels[pi++]
-      const g = pqPixels[pi++]
-      const b = pqPixels[pi++]
-      raw[ri++] = (r >> 8) & 0xFF
-      raw[ri++] = r & 0xFF
-      raw[ri++] = (g >> 8) & 0xFF
-      raw[ri++] = g & 0xFF
-      raw[ri++] = (b >> 8) & 0xFF
-      raw[ri++] = b & 0xFF
+      const r = pqPixels[pi++] ?? 0
+      const g = pqPixels[pi++] ?? 0
+      const b = pqPixels[pi++] ?? 0
+      raw[ri++] = (r >> 8) & 0xff
+      raw[ri++] = r & 0xff
+      raw[ri++] = (g >> 8) & 0xff
+      raw[ri++] = g & 0xff
+      raw[ri++] = (b >> 8) & 0xff
+      raw[ri++] = b & 0xff
     }
   }
 
@@ -266,12 +273,7 @@ function getDefaultCompressionBackend(): CompressionBackend {
   return typeof CompressionStream === 'undefined' ? 'fflate' : 'compression-stream'
 }
 
-export async function encodePNG(
-  width: number,
-  height: number,
-  pqPixels: Uint16Array,
-  options: EncodePNGOptions = {},
-): Promise<Uint8Array> {
+export async function encodePNG(width: number, height: number, pqPixels: Uint16Array, options: EncodePNGOptions = {}): Promise<Uint8Array> {
   const compressionLevel = options.idatCompressionLevel ?? DEFAULT_IDAT_ZLIB_LEVEL
   const compressionBackend = options.compressionBackend ?? getDefaultCompressionBackend()
   const encodeStats = options.encodeStats
@@ -281,12 +283,12 @@ export async function encodePNG(
   if (encodeStats) encodeStats.iccpMs = performance.now() - iccpStart
 
   const chunks = [
-    makeIHDR(width, height),  // image header
-    makeCICP(),               // HDR color info (primary signal)
-    makeCHRM(),               // chromaticity (legacy fallback)
-    iccpChunk,                // ICC profile (compatibility fallback)
+    makeIHDR(width, height), // image header
+    makeCICP(), // HDR color info (primary signal)
+    makeCHRM(), // chromaticity (legacy fallback)
+    iccpChunk, // ICC profile (compatibility fallback)
     await makeIDAT(width, height, pqPixels, compressionBackend, compressionLevel, encodeStats), // pixel data
-    makeIEND(),               // end marker
+    makeIEND(), // end marker
   ]
 
   // Calculate total file size: signature + all chunks

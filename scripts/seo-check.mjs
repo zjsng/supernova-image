@@ -1,11 +1,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { canonicalUrl, DIST_DIR, htmlPathForCanonicalPath, ROOT_DIR, readSeoRoutesConfig } from './seo-routes-utils.mjs'
 
-const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url))
-const ROOT_DIR = path.resolve(SCRIPT_DIR, '..')
-const DIST_DIR = path.join(ROOT_DIR, 'dist')
-const SEO_ROUTES_CONFIG = path.join(ROOT_DIR, 'src', 'lib', 'seo-routes.json')
 const SEO_REPORT_PATH = path.join(DIST_DIR, 'seo-audit.json')
 
 async function exists(filePath) {
@@ -15,17 +11,6 @@ async function exists(filePath) {
   } catch {
     return false
   }
-}
-
-function canonicalUrl(baseUrl, canonicalPath) {
-  if (canonicalPath === '/') return `${baseUrl}/`
-  return `${baseUrl}${canonicalPath}`
-}
-
-function htmlPathForRoute(route) {
-  if (route.canonicalPath === '/') return path.join(DIST_DIR, 'index.html')
-  if (route.canonicalPath === '/404') return path.join(DIST_DIR, '404.html')
-  return path.join(DIST_DIR, route.canonicalPath.slice(1), 'index.html')
 }
 
 function capture(html, regex) {
@@ -54,15 +39,12 @@ function parseSitemapUrls(xml) {
 }
 
 async function run() {
-  const rawConfig = await readFile(SEO_ROUTES_CONFIG, 'utf8')
-  const config = JSON.parse(rawConfig)
-  const routes = Array.isArray(config.routes) ? config.routes : []
-  const baseUrl = String(config.baseUrl ?? '')
+  const { routes, baseUrl } = await readSeoRoutesConfig()
   const issues = []
   const pageResults = []
 
   for (const route of routes) {
-    const htmlPath = htmlPathForRoute(route)
+    const htmlPath = htmlPathForCanonicalPath(route.canonicalPath)
     const routeIssues = []
     const hasFile = await exists(htmlPath)
     if (!hasFile) {
@@ -106,9 +88,7 @@ async function run() {
     issues.push(...routeIssues)
   }
 
-  const expectedSitemapUrls = routes
-    .filter((route) => route.indexable)
-    .map((route) => canonicalUrl(baseUrl, route.canonicalPath))
+  const expectedSitemapUrls = routes.filter((route) => route.indexable).map((route) => canonicalUrl(baseUrl, route.canonicalPath))
   const sitemapPath = path.join(DIST_DIR, 'sitemap.xml')
   const sitemapXml = await readFile(sitemapPath, 'utf8')
   const foundSitemapUrls = parseSitemapUrls(sitemapXml)
@@ -139,14 +119,16 @@ async function run() {
 
   await writeFile(SEO_REPORT_PATH, JSON.stringify(report, null, 2), 'utf8')
 
-  console.table(pageResults.map((page) => ({
-    route: page.canonicalPath,
-    title: page.titlePresent ? 'ok' : 'missing',
-    description: page.descriptionPresent ? 'ok' : 'missing',
-    canonical: page.canonicalMatch ? 'ok' : 'mismatch',
-    robots: page.robotsMatch ? 'ok' : 'mismatch',
-    issues: page.issues.length,
-  })))
+  console.table(
+    pageResults.map((page) => ({
+      route: page.canonicalPath,
+      title: page.titlePresent ? 'ok' : 'missing',
+      description: page.descriptionPresent ? 'ok' : 'missing',
+      canonical: page.canonicalMatch ? 'ok' : 'mismatch',
+      robots: page.robotsMatch ? 'ok' : 'mismatch',
+      issues: page.issues.length,
+    })),
+  )
 
   console.log(`[seo-check] Wrote ${path.relative(ROOT_DIR, SEO_REPORT_PATH)}`)
   if (issues.length > 0) {

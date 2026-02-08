@@ -23,36 +23,13 @@ jobs:
 
       - run: bun install --frozen-lockfile
 
-      - run: bun run build
+      - run: bun run check
 
-      - name: Verify Pages artifact routes
-        run: |
-          set -euo pipefail
+      - run: bunx playwright install --with-deps chromium
 
-          missing=0
+      - run: bun run e2e:ci
 
-          for route in \
-            dist/index.html \
-            dist/how-it-works/index.html \
-            dist/jpeg-to-hdr-png/index.html \
-            dist/webp-to-hdr-png/index.html \
-            dist/avif-to-hdr-png/index.html \
-            dist/hdr-png-browser-compatibility/index.html \
-            dist/404.html \
-            dist/sitemap.xml \
-            dist/seo-audit.json
-          do
-            if [ ! -f "$route" ]; then
-              echo "Missing $route"
-              missing=1
-            fi
-          done
-
-          if [ "$missing" -ne 0 ]; then
-            echo "Current dist files:"
-            find dist -maxdepth 3 -type f | sort
-            exit 1
-          fi
+      - run: bun run perf:pr
 
       - uses: actions/upload-pages-artifact@v3
         with:

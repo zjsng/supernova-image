@@ -9,15 +9,21 @@
 import { boostToPQGain, SDR_TO_PQ_SCALE } from './hdr-boost'
 import { DEFAULT_LOOK_CONTROLS, normalizeLookControls, type LookControls } from './look-controls'
 
+export interface PixelBufferLike {
+  data: Uint8ClampedArray
+  width: number
+  height: number
+}
+
 // ST 2084 constants — derived from the specification's rational polynomial.
 const m1 = 2610 / 16384
-const m2 = 2523 / 4096 * 128
+const m2 = (2523 / 4096) * 128
 const c1 = 3424 / 4096
-const c2 = 2413 / 4096 * 32
-const c3 = 2392 / 4096 * 32
+const c2 = (2413 / 4096) * 32
+const c3 = (2392 / 4096) * 32
 
 // BT.2020 luma coefficients (Rec.2100) for luminance-domain adjustments.
-const BT2020_LUMA = [0.2627, 0.6780, 0.0593] as const
+const BT2020_LUMA = [0.2627, 0.678, 0.0593] as const
 const MID_GRAY_PIVOT = 0.18
 
 // Adaptive shoulder parameters.
@@ -34,18 +40,10 @@ const pqLUT = new Float32Array(PQ_LUT_SIZE + 1)
 type PQEncodeMode = 'lut' | 'exact'
 let pqEncodeMode: PQEncodeMode = 'lut'
 
-export const SRGB_TO_BT2020 = [
-  0.6274039, 0.3292830, 0.0433131,
-  0.0690973, 0.9195404, 0.0113623,
-  0.0163914, 0.0880133, 0.8955953,
-] as const
+export const SRGB_TO_BT2020 = [0.6274039, 0.329283, 0.0433131, 0.0690973, 0.9195404, 0.0113623, 0.0163914, 0.0880133, 0.8955953] as const
 
 // Inverse transform for SDR preview conversion.
-const BT2020_TO_SRGB = [
-  1.6604910, -0.5876411, -0.0728499,
-  -0.1245505, 1.1328999, -0.0083494,
-  -0.0181508, -0.1005789, 1.1187297,
-] as const
+const BT2020_TO_SRGB = [1.660491, -0.5876411, -0.0728499, -0.1245505, 1.1328999, -0.0083494, -0.0181508, -0.1005789, 1.1187297] as const
 
 function pqOETF(L: number): number {
   const Lm1 = Math.pow(L, m1)
@@ -85,8 +83,8 @@ function pqOETFFast(L: number): number {
   const x = L * PQ_LUT_SCALE
   const i = x | 0
   const t = x - i
-  const a = pqLUT[i]
-  const b = pqLUT[i + 1]
+  const a = pqLUT[i] ?? 0
+  const b = pqLUT[i + 1] ?? 1
   return a + (b - a) * t
 }
 
@@ -128,7 +126,7 @@ export function setPQEncodeModeForTesting(mode: PQEncodeMode): void {
   pqEncodeMode = mode
 }
 
-export function pqEncodeDebug(L: number): { exact: number, lut: number } {
+export function pqEncodeDebug(L: number): { exact: number; lut: number } {
   const clamped = clamp(L, 0.0, 1.0)
   return { exact: pqOETF(clamped), lut: pqOETFFast(clamped) }
 }
@@ -144,7 +142,7 @@ export function srgbEOTF(v: number): number {
  * a look-controls object.
  */
 export function processPixels(
-  imageData: ImageData,
+  imageData: PixelBufferLike,
   boost: number,
   lookControlsOrGamma: number | Partial<LookControls> = DEFAULT_LOOK_CONTROLS,
   outBuffer?: Uint16Array,
@@ -171,9 +169,9 @@ export function processPixels(
     const si = i * 4
     const di = i * 3
 
-    const r = lut[data[si]]
-    const g = lut[data[si + 1]]
-    const b = lut[data[si + 2]]
+    const r = lut[data[si] ?? 0] ?? 0
+    const g = lut[data[si + 1] ?? 0] ?? 0
+    const b = lut[data[si + 2] ?? 0] ?? 0
 
     let r2020 = (m[0] * r + m[1] * g + m[2] * b) * gain
     let g2020 = (m[3] * r + m[4] * g + m[5] * b) * gain
@@ -245,7 +243,7 @@ export function processPixels(
  * Fast preview path: outputs SDR RGBA8 approximation for responsive UI.
  */
 export function processPreviewPixels(
-  imageData: ImageData,
+  imageData: PixelBufferLike,
   boost: number,
   lookControlsInput: Partial<LookControls> = DEFAULT_LOOK_CONTROLS,
   outBuffer?: Uint8ClampedArray,
@@ -275,9 +273,9 @@ export function processPreviewPixels(
     const si = i * 4
     const di = i * 4
 
-    const r = lut[data[si]]
-    const g = lut[data[si + 1]]
-    const b = lut[data[si + 2]]
+    const r = lut[data[si] ?? 0] ?? 0
+    const g = lut[data[si + 1] ?? 0] ?? 0
+    const b = lut[data[si + 2] ?? 0] ?? 0
 
     let r2020 = (m[0] * r + m[1] * g + m[2] * b) * gain
     let g2020 = (m[3] * r + m[4] * g + m[5] * b) * gain

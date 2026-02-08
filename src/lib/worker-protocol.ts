@@ -69,8 +69,4 @@ export interface WorkerPreviewErrorResponse {
   code?: 'DECODE_UNSUPPORTED' | 'BAD_INPUT' | 'INTERNAL'
 }
 
-export type WorkerResponseMessage =
-  | WorkerSuccessResponse
-  | WorkerErrorResponse
-  | WorkerPreviewSuccessResponse
-  | WorkerPreviewErrorResponse
+export type WorkerResponseMessage = WorkerSuccessResponse | WorkerErrorResponse | WorkerPreviewSuccessResponse | WorkerPreviewErrorResponse

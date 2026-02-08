@@ -44,10 +44,10 @@ export function useHead(title: string, description: string, canonicalPath: strin
     if (SEO_TWITTER_SITE) {
       ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:site', content: SEO_TWITTER_SITE } })
     }
-    return
   }
 
   useEffect(() => {
+    if (ssrHead) return
     document.title = title
 
     const updates: [string, string, string][] = [

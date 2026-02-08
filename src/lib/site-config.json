@@ -1,0 +1,12 @@
+{
+  "baseUrl": "https://zjsng.github.io/supernova-image",
+  "siteName": "Supernova",
+  "defaultDocumentTitle": "Supernova — HDR PNG Converter",
+  "themeColor": "#0a0a0a",
+  "ogLocale": "en_US",
+  "ogImage": "https://zjsng.github.io/supernova-image/og-image.png",
+  "ogImageAlt": "Supernova HDR PNG converter interface preview",
+  "twitterCard": "summary_large_image",
+  "twitterSite": null,
+  "faviconPath": "/supernova-image/favicon.svg"
+}

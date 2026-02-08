@@ -1,0 +1,20 @@
+name: Performance Regression
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * 1'
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: BENCH_PROFILE=pr BENCH_BASELINE_BACKEND=fflate bun run bench:hdr
+
+      - run: BENCH_REQUIRE_BASELINE=true BENCH_MAX_REGRESSION_PCT=20 BENCH_MAX_SIZE_REGRESSION_PCT=0 bun run bench:compare

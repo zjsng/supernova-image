@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - gh-pages
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+
+      - run: bun install --frozen-lockfile
+
+      - run: bun run check
+
+      - run: bunx playwright install --with-deps chromium
+
+      - run: bun run e2e:ci
+
+      - run: bun run perf:pr

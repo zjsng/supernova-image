@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  pqEncodeDebug,
-  processPreviewPixels,
-  processPixels,
-  setPQEncodeModeForTesting,
-  srgbEOTF,
-  SRGB_TO_BT2020,
-} from './pq'
+import { pqEncodeDebug, processPreviewPixels, processPixels, setPQEncodeModeForTesting, srgbEOTF, SRGB_TO_BT2020 } from './pq'
 import { boostToPQGain } from './hdr-boost'
 import { DEFAULT_LOOK_CONTROLS } from './look-controls'
 
@@ -167,9 +160,18 @@ describe('processPixels', () => {
   it('handles multi-pixel images', () => {
     const imageData = {
       data: new Uint8ClampedArray([
-        255, 0, 0, 255,   // red pixel
-        0, 255, 0, 255,   // green pixel
-        0, 0, 255, 255,   // blue pixel
+        255,
+        0,
+        0,
+        255, // red pixel
+        0,
+        255,
+        0,
+        255, // green pixel
+        0,
+        0,
+        255,
+        255, // blue pixel
       ]),
       width: 3,
       height: 1,
@@ -272,8 +274,8 @@ describe('preview processing path', () => {
     const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
     const contrasty = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, contrast: 1.35 })
 
-    const neutralLuma = 0.2627 * neutral[0] + 0.6780 * neutral[1] + 0.0593 * neutral[2]
-    const contrastLuma = 0.2627 * contrasty[0] + 0.6780 * contrasty[1] + 0.0593 * contrasty[2]
+    const neutralLuma = 0.2627 * neutral[0] + 0.678 * neutral[1] + 0.0593 * neutral[2]
+    const contrastLuma = 0.2627 * contrasty[0] + 0.678 * contrasty[1] + 0.0593 * contrasty[2]
     expect(Math.abs(contrastLuma - 128)).toBeGreaterThanOrEqual(Math.abs(neutralLuma - 128))
   })
 
