@@ -86,11 +86,17 @@ describe('evaluateBenchmarkReport', () => {
   it('fails when snapshot perf regression exceeds threshold', () => {
     const report = makeReport()
     const snapshot = makeReport({
+      baseline: {
+        config: { name: 'baseline-compression-stream-l6', backend: 'compression-stream', level: 6 },
+        caseResults: [],
+        medianTotalMs: 100,
+        medianOutputBytes: 1000,
+      },
       candidates: [
         {
           config: { name: 'fflate-l6', backend: 'fflate', level: 6 },
           caseResults: [],
-          medianTotalMs: 60,
+          medianTotalMs: 70,
           medianOutputBytes: 980,
         },
       ],
@@ -114,11 +120,17 @@ describe('evaluateBenchmarkReport', () => {
   it('passes snapshot gate when deltas are within thresholds', () => {
     const report = makeReport()
     const snapshot = makeReport({
+      baseline: {
+        config: { name: 'baseline-compression-stream-l6', backend: 'compression-stream', level: 6 },
+        caseResults: [],
+        medianTotalMs: 200,
+        medianOutputBytes: 1000,
+      },
       candidates: [
         {
           config: { name: 'fflate-l6', backend: 'fflate', level: 6 },
           caseResults: [],
-          medianTotalMs: 100,
+          medianTotalMs: 180,
           medianOutputBytes: 980,
         },
       ],
@@ -139,5 +151,56 @@ describe('evaluateBenchmarkReport', () => {
     expect(result.snapshotChecked).toBe(true)
     expect(result.perfRegressionPct).not.toBeNull()
     expect(result.sizeRegressionPct).not.toBeNull()
+  })
+
+  it('passes snapshot perf gate when absolute runtime increases but normalized ratio is stable', () => {
+    const report = makeReport({
+      baseline: {
+        config: { name: 'baseline-compression-stream-l6', backend: 'compression-stream', level: 6 },
+        caseResults: [],
+        medianTotalMs: 600,
+        medianOutputBytes: 1000,
+      },
+      candidates: [
+        {
+          config: { name: 'fflate-l6', backend: 'fflate', level: 6 },
+          caseResults: [],
+          medianTotalMs: 540,
+          medianOutputBytes: 980,
+        },
+      ],
+      selected: { name: 'fflate-l6', backend: 'fflate', level: 6 },
+    })
+    const snapshot = makeReport({
+      baseline: {
+        config: { name: 'baseline-compression-stream-l6', backend: 'compression-stream', level: 6 },
+        caseResults: [],
+        medianTotalMs: 200,
+        medianOutputBytes: 1000,
+      },
+      candidates: [
+        {
+          config: { name: 'fflate-l6', backend: 'fflate', level: 6 },
+          caseResults: [],
+          medianTotalMs: 180,
+          medianOutputBytes: 980,
+        },
+      ],
+      selected: { name: 'fflate-l6', backend: 'fflate', level: 6 },
+    })
+
+    const result = evaluateBenchmarkReport(
+      report,
+      {
+        minSpeedupPct: 0,
+        maxRegressionPct: 5,
+        maxSizeRegressionPct: 0,
+        requireBaselineSnapshot: true,
+      },
+      snapshot,
+    )
+
+    expect(result.snapshotChecked).toBe(true)
+    expect(result.perfRegressionPct).toBeLessThanOrEqual(0)
   })
 })

@@ -52,6 +52,13 @@ function pctDelta(current: number, previous: number): number {
   return ((current - previous) / previous) * 100
 }
 
+function normalizedPerfRatio(selectedMs: number, baselineMs: number): number {
+  if (baselineMs <= 0) {
+    throw new Error(`baseline medianTotalMs must be > 0, got ${baselineMs}`)
+  }
+  return selectedMs / baselineMs
+}
+
 function findSummaryByConfig(report: BenchmarkReport, configName: string): BenchmarkConfigSummary | undefined {
   if (report.baseline.config.name === configName) return report.baseline
   return report.candidates.find((candidate) => candidate.config.name === configName)
@@ -119,11 +126,17 @@ export function evaluateBenchmarkReport(
     }
   }
 
-  const perfRegressionPct = pctDelta(selectedSummary.medianTotalMs, baselineSelected.medianTotalMs)
+  const currentPerfRatio = normalizedPerfRatio(selectedSummary.medianTotalMs, baseline.medianTotalMs)
+  const snapshotPerfRatio = normalizedPerfRatio(baselineSelected.medianTotalMs, baselineSnapshot.baseline.medianTotalMs)
+  const perfRegressionPct = pctDelta(currentPerfRatio, snapshotPerfRatio)
   const sizeRegressionPct = pctDelta(selectedSummary.medianOutputBytes, baselineSelected.medianOutputBytes)
 
   if (perfRegressionPct > options.maxRegressionPct) {
-    throw new Error(`Performance regression too high: ${perfRegressionPct.toFixed(2)}% > allowed ${options.maxRegressionPct.toFixed(2)}%`)
+    throw new Error(
+      `Performance regression too high: ${perfRegressionPct.toFixed(2)}% > allowed ${options.maxRegressionPct.toFixed(
+        2,
+      )}% (normalized selected/baseline ratio)`,
+    )
   }
 
   if (sizeRegressionPct > options.maxSizeRegressionPct) {
