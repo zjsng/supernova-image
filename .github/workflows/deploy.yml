@@ -31,15 +31,22 @@ jobs:
 
           missing=0
 
-          if [ ! -f dist/how-it-works/index.html ]; then
-            echo "Missing dist/how-it-works/index.html"
-            missing=1
-          fi
-
-          if [ ! -f dist/404.html ]; then
-            echo "Missing dist/404.html"
-            missing=1
-          fi
+          for route in \
+            dist/index.html \
+            dist/how-it-works/index.html \
+            dist/jpeg-to-hdr-png/index.html \
+            dist/webp-to-hdr-png/index.html \
+            dist/avif-to-hdr-png/index.html \
+            dist/hdr-png-browser-compatibility/index.html \
+            dist/404.html \
+            dist/sitemap.xml \
+            dist/seo-audit.json
+          do
+            if [ ! -f "$route" ]; then
+              echo "Missing $route"
+              missing=1
+            fi
+          done
 
           if [ "$missing" -ne 0 ]; then
             echo "Current dist files:"

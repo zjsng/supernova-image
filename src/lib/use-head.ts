@@ -1,4 +1,5 @@
 import { useEffect } from 'preact/hooks'
+import { canonicalUrlForPath, SEO_TWITTER_SITE } from './seo-routes'
 
 interface HeadElement {
   type: string
@@ -26,10 +27,8 @@ export function flushHead(): HeadData | null {
   return head
 }
 
-const BASE_URL = 'https://zjsng.github.io/supernova-image'
-
 export function useHead(title: string, description: string, canonicalPath: string, options?: HeadOptions) {
-  const canonicalUrl = `${BASE_URL}${canonicalPath}`
+  const canonicalUrl = canonicalUrlForPath(canonicalPath)
   const robots = options?.robots ?? 'index,follow'
 
   if (ssrHead) {
@@ -42,6 +41,9 @@ export function useHead(title: string, description: string, canonicalPath: strin
     ssrHead.elements.push({ type: 'meta', props: { property: 'og:url', content: canonicalUrl } })
     ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:title', content: title } })
     ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:description', content: description } })
+    if (SEO_TWITTER_SITE) {
+      ssrHead.elements.push({ type: 'meta', props: { name: 'twitter:site', content: SEO_TWITTER_SITE } })
+    }
     return
   }
 
@@ -58,6 +60,9 @@ export function useHead(title: string, description: string, canonicalPath: strin
       ['meta[name="twitter:title"]', 'content', title],
       ['meta[name="twitter:description"]', 'content', description],
     ]
+    if (SEO_TWITTER_SITE) {
+      updates.push(['meta[name="twitter:site"]', 'content', SEO_TWITTER_SITE])
+    }
 
     for (const [selector, attr, value] of updates) {
       document.querySelector(selector)?.setAttribute(attr, value)

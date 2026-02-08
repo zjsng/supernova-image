@@ -2,6 +2,12 @@ import { Fragment } from 'preact'
 import { useState, useRef, useCallback, useEffect } from 'preact/hooks'
 import { LocationProvider, Router, Route, useLocation } from 'preact-iso'
 import { useHead } from './lib/use-head'
+import {
+  SEO_BASE_URL,
+  SEO_ROUTE_BY_CANONICAL_PATH,
+  SEO_ROUTE_BY_ROUTER_PATH,
+  hrefForCanonicalPath,
+} from './lib/seo-routes'
 import { BOOST_UI_MAX, BOOST_UI_MIN, boostToTargetNits } from './lib/hdr-boost'
 import {
   DEFAULT_LOOK_CONTROLS,
@@ -25,6 +31,33 @@ interface ImageState {
   height: number
   file: File
   el: HTMLImageElement
+}
+
+const HOME_CANONICAL_PATH = '/'
+const HOW_IT_WORKS_CANONICAL_PATH = '/how-it-works'
+const JPEG_CANONICAL_PATH = '/jpeg-to-hdr-png'
+const WEBP_CANONICAL_PATH = '/webp-to-hdr-png'
+const AVIF_CANONICAL_PATH = '/avif-to-hdr-png'
+const COMPAT_CANONICAL_PATH = '/hdr-png-browser-compatibility'
+const NOT_FOUND_CANONICAL_PATH = '/404'
+
+const RELATED_INTENT_PAGES = [
+  { path: JPEG_CANONICAL_PATH, label: 'JPEG to HDR PNG' },
+  { path: WEBP_CANONICAL_PATH, label: 'WebP to HDR PNG' },
+  { path: AVIF_CANONICAL_PATH, label: 'AVIF to HDR PNG' },
+  { path: COMPAT_CANONICAL_PATH, label: 'HDR PNG browser compatibility' },
+]
+
+function useSeoRouteHead(canonicalPath: string) {
+  const route = SEO_ROUTE_BY_CANONICAL_PATH.get(canonicalPath)
+  if (!route) {
+    throw new Error(`Missing SEO route metadata for: ${canonicalPath}`)
+  }
+  useHead(route.title, route.description, route.canonicalPath, { robots: route.robots })
+}
+
+function RouteJsonLd({ data }: { data: Record<string, unknown> }) {
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
 }
 
 function rangeBackground(value: number, min: number, max: number): string {
@@ -260,14 +293,10 @@ function RevealSection({ children, className = '' }: RevealSectionProps) {
 }
 
 function HowItWorks() {
-  useHead(
-    'How HDR PNG Conversion Works | Supernova',
-    'Learn how this HDR PNG converter uses live SDR preview, look controls, PQ transfer, Rec.2020 color, and cICP/cHRM/iCCP metadata to produce HDR-ready PNG files.',
-    '/how-it-works'
-  )
+  useSeoRouteHead(HOW_IT_WORKS_CANONICAL_PATH)
   return (
     <div class="how-it-works">
-      <a class="how-back-link" href="/supernova-image/">
+      <a class="how-back-link" href={hrefForCanonicalPath(HOME_CANONICAL_PATH)}>
         <ArrowLeftIcon />
         Back to HDR PNG Converter
       </a>
@@ -347,9 +376,21 @@ function HowItWorks() {
         <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
       </RevealSection>
 
+      <RevealSection className="how-section">
+        <h2>Related Guides</h2>
+        <ul class="how-meta-list">
+          {RELATED_INTENT_PAGES.map((item) => (
+            <li key={item.path}>
+              <a href={hrefForCanonicalPath(item.path)}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+      </RevealSection>
+
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify({
         "@context": "https://schema.org",
         "@type": "FAQPage",
+        "mainEntityOfPage": `${SEO_BASE_URL}${HOW_IT_WORKS_CANONICAL_PATH}`,
         "mainEntity": [
           {
             "@type": "Question",
@@ -390,11 +431,7 @@ function HowItWorks() {
 }
 
 function Home() {
-  useHead(
-    'HDR PNG Converter: Convert Images to HDR PNG | Supernova',
-    'Convert image files to HDR PNG in your browser with PQ (ST 2084) and Rec.2020 metadata. Upload PNG, JPEG, WebP, or AVIF and download instantly.',
-    '/'
-  )
+  useSeoRouteHead(HOME_CANONICAL_PATH)
   const [image, setImage] = useState<ImageState | null>(null)
   const [boost, setBoost] = useState(5)
   const [lookControls, setLookControls] = useState<LookControls>(DEFAULT_LOOK_CONTROLS)
@@ -971,7 +1008,47 @@ function Home() {
         <h2 id="converter-overview-title">Convert Images To HDR PNG With PQ (ST 2084)</h2>
         <p>Supernova is a browser-based HDR PNG converter built for fast local conversion. Drop a PNG, JPEG, WebP, or AVIF image and export an HDR PNG without uploading anything.</p>
         <p>The output includes PQ transfer and Rec.2020 metadata (cICP, cHRM, iCCP) so highlights can render with extended brightness on supported HDR displays and browsers.</p>
+        <p>
+          Popular guides:
+          {' '}
+          {RELATED_INTENT_PAGES.map((item, index) => (
+            <Fragment key={item.path}>
+              {index > 0 && ' · '}
+              <a href={hrefForCanonicalPath(item.path)}>{item.label}</a>
+            </Fragment>
+          ))}
+        </p>
       </section>
+
+      <RouteJsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "WebApplication",
+              "name": "Supernova",
+              "description": "Convert any image to HDR PNG in your browser",
+              "url": `${SEO_BASE_URL}/`,
+              "mainEntityOfPage": `${SEO_BASE_URL}/`,
+              "applicationCategory": "MultimediaApplication",
+              "operatingSystem": "Any",
+              "browserRequirements": "Modern browser with HDR display recommended",
+              "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+            },
+            {
+              "@type": "WebSite",
+              "name": "Supernova",
+              "url": `${SEO_BASE_URL}/`
+            },
+            {
+              "@type": "Organization",
+              "name": "Supernova",
+              "url": `${SEO_BASE_URL}/`,
+              "logo": `${SEO_BASE_URL}/og-image.png`
+            }
+          ]
+        }}
+      />
 
       <footer class="trust-badge">
         <span class="trust-badge__item">
@@ -1003,20 +1080,128 @@ function Home() {
   )
 }
 
-function NotFound() {
-  useHead(
-    'Page Not Found | Supernova HDR PNG Converter',
-    'This page could not be found. Return to the Supernova HDR PNG converter.',
-    '/404',
-    { robots: 'noindex,nofollow' }
+interface IntentGuideProps {
+  canonicalPath: string
+  heading: string
+  intro: string
+  details: string
+}
+
+function IntentGuidePage({ canonicalPath, heading, intro, details }: IntentGuideProps) {
+  useSeoRouteHead(canonicalPath)
+  return (
+    <div class="how-it-works">
+      <a class="how-back-link" href={hrefForCanonicalPath(HOME_CANONICAL_PATH)}>
+        <ArrowLeftIcon />
+        Back to HDR PNG Converter
+      </a>
+      <section class="how-hero">
+        <h1>{heading}</h1>
+        <p>{intro}</p>
+      </section>
+      <RevealSection className="how-section">
+        <h2>How Supernova Handles This Format</h2>
+        <p>{details}</p>
+        <ul class="how-meta-list">
+          <li>Process locally in your browser with no uploads.</li>
+          <li>Preview edits with a fast SDR approximation.</li>
+          <li>Export 16-bit HDR PNG using PQ and BT.2020 metadata.</li>
+        </ul>
+      </RevealSection>
+      <RevealSection className="how-section">
+        <h2>Related Pages</h2>
+        <ul class="how-meta-list">
+          <li><a href={hrefForCanonicalPath(HOW_IT_WORKS_CANONICAL_PATH)}>How HDR PNG conversion works</a></li>
+          {RELATED_INTENT_PAGES.filter((item) => item.path !== canonicalPath).map((item) => (
+            <li key={item.path}>
+              <a href={hrefForCanonicalPath(item.path)}>{item.label}</a>
+            </li>
+          ))}
+        </ul>
+      </RevealSection>
+    </div>
   )
+}
+
+function JpegToHdrPngPage() {
+  return (
+    <IntentGuidePage
+      canonicalPath={JPEG_CANONICAL_PATH}
+      heading="JPEG to HDR PNG Converter"
+      intro="Convert JPEG photos to HDR PNG using local, in-browser processing. Adjust boost and look controls, then export with HDR metadata."
+      details="JPEG images are decoded into linear light, transformed to BT.2020, and encoded with PQ transfer for HDR output. This workflow preserves detail while allowing controlled highlight brightness."
+    />
+  )
+}
+
+function WebpToHdrPngPage() {
+  return (
+    <IntentGuidePage
+      canonicalPath={WEBP_CANONICAL_PATH}
+      heading="WebP to HDR PNG Converter"
+      intro="Turn WebP images into HDR PNG files without sending data to a server. Supernova gives you live before/after editing and final HDR export."
+      details="WebP inputs follow the same calibrated pipeline as other formats: decode, linear grading controls, HDR boost mapping, PQ encoding, and metadata packaging for compatible HDR displays."
+    />
+  )
+}
+
+function AvifToHdrPngPage() {
+  return (
+    <IntentGuidePage
+      canonicalPath={AVIF_CANONICAL_PATH}
+      heading="AVIF to HDR PNG Converter"
+      intro="Convert AVIF to HDR PNG and keep full local privacy. Tune saturation, vibrance, contrast, and highlight roll-off before downloading."
+      details="AVIF images are processed in-browser and exported as 16-bit HDR PNG with cICP, cHRM, and iCCP metadata. This improves compatibility for HDR PNG workflows while preserving the HDR intent."
+    />
+  )
+}
+
+function HdrPngBrowserCompatibilityPage() {
+  useSeoRouteHead(COMPAT_CANONICAL_PATH)
+  return (
+    <div class="how-it-works">
+      <a class="how-back-link" href={hrefForCanonicalPath(HOME_CANONICAL_PATH)}>
+        <ArrowLeftIcon />
+        Back to HDR PNG Converter
+      </a>
+      <section class="how-hero">
+        <h1>HDR PNG Browser Compatibility</h1>
+        <p>HDR PNG display support depends on browser color management and metadata handling. Supernova exports cICP, cHRM, and iCCP for broad compatibility.</p>
+      </section>
+      <RevealSection className="how-section">
+        <h2>Current Support Snapshot</h2>
+        <BrowserCompat />
+      </RevealSection>
+      <RevealSection className="how-section">
+        <h2>Implementation Notes</h2>
+        <ul class="how-meta-list">
+          <li>Chrome and Edge use cICP signaling for HDR rendering.</li>
+          <li>Safari on macOS uses ICC metadata for EDR display behavior.</li>
+          <li>On SDR displays, files still render as standard PNG images.</li>
+        </ul>
+      </RevealSection>
+      <RevealSection className="how-section">
+        <h2>Related Guides</h2>
+        <ul class="how-meta-list">
+          <li><a href={hrefForCanonicalPath(HOW_IT_WORKS_CANONICAL_PATH)}>How HDR PNG conversion works</a></li>
+          <li><a href={hrefForCanonicalPath(JPEG_CANONICAL_PATH)}>JPEG to HDR PNG</a></li>
+          <li><a href={hrefForCanonicalPath(WEBP_CANONICAL_PATH)}>WebP to HDR PNG</a></li>
+          <li><a href={hrefForCanonicalPath(AVIF_CANONICAL_PATH)}>AVIF to HDR PNG</a></li>
+        </ul>
+      </RevealSection>
+    </div>
+  )
+}
+
+function NotFound() {
+  useSeoRouteHead(NOT_FOUND_CANONICAL_PATH)
 
   return (
     <div class="not-found">
       <div class="not-found__star" aria-hidden="true" />
       <h1>Signal Lost</h1>
       <p>This page drifted beyond the visible spectrum.</p>
-      <a class="not-found__link" href="/supernova-image/">
+      <a class="not-found__link" href={hrefForCanonicalPath(HOME_CANONICAL_PATH)}>
         <ArrowLeftIcon />
         Go to HDR PNG Converter
       </a>
@@ -1026,12 +1211,14 @@ function NotFound() {
 
 function Header() {
   const { path } = useLocation()
-  const isHome = path === '/' || path === '/supernova-image' || path === '/supernova-image/'
+  const normalizedPath = path === '/supernova-image' ? hrefForCanonicalPath(HOME_CANONICAL_PATH) : path
+  const matchedRoute = SEO_ROUTE_BY_ROUTER_PATH.get(normalizedPath)
+  const isHome = path === '/' || matchedRoute?.id === 'home'
   return (
     <div class="header">
       {isHome ? <h1>HDR PNG Converter</h1> : <div class="header__brand">Supernova</div>}
       <p>Convert any image to <span class="accent">HDR PNG</span> — runs entirely in your browser</p>
-      {isHome && <a class="how-link" href="/supernova-image/how-it-works">How it works</a>}
+      {isHome && <a class="how-link" href={hrefForCanonicalPath(HOW_IT_WORKS_CANONICAL_PATH)}>How it works</a>}
     </div>
   )
 }
@@ -1041,9 +1228,13 @@ export function App({ url }: { url?: string }) {
     <LocationProvider url={url}>
       <Header />
       <Router>
-        <Route path="/supernova-image/" component={Home} />
-        <Route path="/supernova-image/how-it-works" component={HowItWorks} />
-        <Route path="/supernova-image/404" component={NotFound} />
+        <Route path={hrefForCanonicalPath(HOME_CANONICAL_PATH)} component={Home} />
+        <Route path={hrefForCanonicalPath(HOW_IT_WORKS_CANONICAL_PATH)} component={HowItWorks} />
+        <Route path={hrefForCanonicalPath(JPEG_CANONICAL_PATH)} component={JpegToHdrPngPage} />
+        <Route path={hrefForCanonicalPath(WEBP_CANONICAL_PATH)} component={WebpToHdrPngPage} />
+        <Route path={hrefForCanonicalPath(AVIF_CANONICAL_PATH)} component={AvifToHdrPngPage} />
+        <Route path={hrefForCanonicalPath(COMPAT_CANONICAL_PATH)} component={HdrPngBrowserCompatibilityPage} />
+        <Route path={hrefForCanonicalPath(NOT_FOUND_CANONICAL_PATH)} component={NotFound} />
         <Route default component={NotFound} />
       </Router>
     </LocationProvider>

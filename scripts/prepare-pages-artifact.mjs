@@ -1,4 +1,5 @@
 import { access, copyFile, cp, readdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -9,6 +10,8 @@ const NESTED_DIR = path.join(DIST_DIR, 'supernova-image')
 const INDEX_HTML = path.join(DIST_DIR, 'index.html')
 const ROUTE_404_INDEX_HTML = path.join(DIST_DIR, '404', 'index.html')
 const NOT_FOUND_HTML = path.join(DIST_DIR, '404.html')
+const SITEMAP_XML = path.join(DIST_DIR, 'sitemap.xml')
+const SEO_ROUTES_CONFIG = path.join(ROOT_DIR, 'src', 'lib', 'seo-routes.json')
 
 async function exists(filePath) {
   try {
@@ -58,6 +61,61 @@ async function ensureNotFoundPage() {
   console.log('[prepare-pages-artifact] Wrote dist/404.html from dist/index.html with noindex fallback metadata.')
 }
 
+function asDateString(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : null
+}
+
+function fallbackBuildDate() {
+  return new Date().toISOString().slice(0, 10)
+}
+
+function lastModifiedForRoute(route, fallbackDate) {
+  const sources = Array.isArray(route.lastmodSources) ? route.lastmodSources : []
+  for (const source of sources) {
+    try {
+      const output = execFileSync('git', ['log', '-1', '--format=%cs', '--', source], {
+        cwd: ROOT_DIR,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim()
+      const normalized = asDateString(output)
+      if (normalized) return normalized
+    } catch {
+      // Continue to fallback.
+    }
+  }
+  return fallbackDate
+}
+
+function canonicalUrl(baseUrl, canonicalPath) {
+  if (canonicalPath === '/') return `${baseUrl}/`
+  return `${baseUrl}${canonicalPath}`
+}
+
+async function writeSitemapFromSeoRoutes() {
+  const raw = await readFile(SEO_ROUTES_CONFIG, 'utf8')
+  const config = JSON.parse(raw)
+  const baseUrl = String(config.baseUrl ?? '')
+  const routes = Array.isArray(config.routes) ? config.routes : []
+  if (!baseUrl || routes.length === 0) {
+    throw new Error('Missing baseUrl or routes in src/lib/seo-routes.json; cannot generate sitemap.')
+  }
+
+  const fallbackDate = fallbackBuildDate()
+  const urls = routes
+    .filter((route) => route.indexable)
+    .map((route) => {
+      const loc = canonicalUrl(baseUrl, route.canonicalPath)
+      const lastmod = lastModifiedForRoute(route, fallbackDate)
+      return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n  </url>`
+    })
+    .join('\n')
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`
+  await writeFile(SITEMAP_XML, xml, 'utf8')
+  console.log(`[prepare-pages-artifact] Wrote dist/sitemap.xml from route metadata (${routes.filter((route) => route.indexable).length} URLs).`)
+}
+
 async function main() {
   if (!(await exists(DIST_DIR))) {
     throw new Error('Missing dist/ directory. Run the build before preparing the Pages artifact.')
@@ -65,6 +123,7 @@ async function main() {
 
   await copyNestedBuildOutput()
   await ensureNotFoundPage()
+  await writeSitemapFromSeoRoutes()
 }
 
 main().catch((error) => {

@@ -1,0 +1,87 @@
+{
+  "baseUrl": "https://zjsng.github.io/supernova-image",
+  "ogImage": "https://zjsng.github.io/supernova-image/og-image.png",
+  "ogImageAlt": "Supernova HDR PNG converter interface preview",
+  "ogLocale": "en_US",
+  "twitterCard": "summary_large_image",
+  "twitterSite": null,
+  "routes": [
+    {
+      "id": "home",
+      "canonicalPath": "/",
+      "routerPath": "/supernova-image/",
+      "title": "HDR PNG Converter: Convert Images to HDR PNG | Supernova",
+      "description": "Convert image files to HDR PNG in your browser with PQ (ST 2084) and Rec.2020 metadata. Upload PNG, JPEG, WebP, or AVIF and download instantly.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "webapp",
+      "lastmodSources": ["src/app.tsx", "src/lib/use-head.ts"]
+    },
+    {
+      "id": "how-it-works",
+      "canonicalPath": "/how-it-works",
+      "routerPath": "/supernova-image/how-it-works",
+      "title": "How HDR PNG Conversion Works | Supernova",
+      "description": "Learn how this HDR PNG converter uses live SDR preview, look controls, PQ transfer, Rec.2020 color, and cICP/cHRM/iCCP metadata to produce HDR-ready PNG files.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "faq",
+      "lastmodSources": ["src/app.tsx"]
+    },
+    {
+      "id": "jpeg-to-hdr-png",
+      "canonicalPath": "/jpeg-to-hdr-png",
+      "routerPath": "/supernova-image/jpeg-to-hdr-png",
+      "title": "JPEG to HDR PNG Converter (Free, In Browser) | Supernova",
+      "description": "Convert JPEG photos to HDR PNG in your browser with PQ and Rec.2020 metadata. Keep local processing, tune look controls, and download instantly.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "none",
+      "lastmodSources": ["src/app.tsx"]
+    },
+    {
+      "id": "webp-to-hdr-png",
+      "canonicalPath": "/webp-to-hdr-png",
+      "routerPath": "/supernova-image/webp-to-hdr-png",
+      "title": "WebP to HDR PNG Converter (Fast Local Export) | Supernova",
+      "description": "Turn WebP images into HDR PNG files with PQ transfer and Rec.2020 metadata. Adjust saturation and advanced controls, then export in your browser.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "none",
+      "lastmodSources": ["src/app.tsx"]
+    },
+    {
+      "id": "avif-to-hdr-png",
+      "canonicalPath": "/avif-to-hdr-png",
+      "routerPath": "/supernova-image/avif-to-hdr-png",
+      "title": "AVIF to HDR PNG Converter With PQ Metadata | Supernova",
+      "description": "Convert AVIF images to HDR PNG without uploading. Supernova processes locally and outputs 16-bit PQ BT.2020 PNG for compatible HDR displays.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "none",
+      "lastmodSources": ["src/app.tsx"]
+    },
+    {
+      "id": "hdr-png-browser-compatibility",
+      "canonicalPath": "/hdr-png-browser-compatibility",
+      "routerPath": "/supernova-image/hdr-png-browser-compatibility",
+      "title": "HDR PNG Browser Compatibility Guide | Supernova",
+      "description": "See HDR PNG support across Chrome, Edge, Safari, and Firefox, and learn how PQ, cICP, cHRM, and iCCP metadata affect rendering.",
+      "robots": "index,follow",
+      "indexable": true,
+      "schemaProfile": "none",
+      "lastmodSources": ["src/app.tsx"]
+    },
+    {
+      "id": "404",
+      "canonicalPath": "/404",
+      "routerPath": "/supernova-image/404",
+      "title": "Page Not Found | Supernova HDR PNG Converter",
+      "description": "This page could not be found. Return to the Supernova HDR PNG converter.",
+      "robots": "noindex,nofollow",
+      "indexable": false,
+      "schemaProfile": "none",
+      "lastmodSources": ["src/app.tsx"]
+    }
+  ]
+}
