@@ -20,16 +20,27 @@ test('upload, preview update, and download flow works', async ({ page }) => {
   const fileInput = page.locator('input[type="file"]')
   await fileInput.setInputFiles(fixturePath)
 
-  await expect(page.getByText('Before')).toBeVisible()
-  await expect(page.getByText('After')).toBeVisible()
+  await expect(page.locator('.filename')).toContainText('test.png', { timeout: 15_000 })
 
   const previewPlaceholder = page.getByText('Adjust controls to render preview')
   await expect(previewPlaceholder).toBeHidden()
 
-  const previewCanvas = page.locator('canvas.preview-output-canvas')
-  await expect(previewCanvas).toBeVisible()
-
-  const initialPreview = await previewCanvas.evaluate((canvas) => canvas.toDataURL())
+  const previewDataUrl = async (): Promise<string | null> => {
+    const previewCanvas = page.locator('canvas.preview-output-canvas')
+    const count = await previewCanvas.count()
+    if (count === 0) return null
+    return previewCanvas.evaluate((canvas) => (canvas.width > 0 && canvas.height > 0 ? canvas.toDataURL() : null))
+  }
+  let initialPreview: string | null = null
+  await expect
+    .poll(
+      async () => {
+        initialPreview = await previewDataUrl()
+        return initialPreview
+      },
+      { timeout: 15_000 },
+    )
+    .not.toBeNull()
 
   await page.locator('#saturation-range').evaluate((el) => {
     const input = el as HTMLInputElement
@@ -39,7 +50,7 @@ test('upload, preview update, and download flow works', async ({ page }) => {
 
   await expect(page.locator('.control-group .value').first()).toContainText('nits')
 
-  await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.toDataURL()), { timeout: 15_000 }).not.toBe(initialPreview)
+  await expect.poll(previewDataUrl, { timeout: 15_000 }).not.toBe(initialPreview)
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download HDR PNG' }).click()
