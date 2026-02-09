@@ -31,6 +31,25 @@ function buildUserFacingError(error: unknown): string {
   return getWorkerErrorMessage(error)
 }
 
+function triggerPngDownload(pngData: Uint8Array, sourceName: string): void {
+  const blob = new Blob([new Uint8Array(pngData)], { type: 'image/png' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  const stem = sourceName.replace(/\.[^.]+$/, '') || 'image'
+
+  anchor.href = url
+  anchor.download = `${stem}-hdr.png`
+  anchor.rel = 'noopener'
+  anchor.style.display = 'none'
+  document.body.append(anchor)
+  anchor.click()
+
+  window.setTimeout(() => {
+    anchor.remove()
+    URL.revokeObjectURL(url)
+  }, 1000)
+}
+
 export function Home() {
   useSeoRouteHead(HOME_ROUTE.canonicalPath)
 
@@ -300,14 +319,7 @@ export function Home() {
         })
       }
 
-      const blob = new Blob([new Uint8Array(result.pngData)], { type: 'image/png' })
-      const url = URL.createObjectURL(blob)
-      const anchor = document.createElement('a')
-      const stem = image.name.replace(/\.[^.]+$/, '')
-      anchor.href = url
-      anchor.download = `${stem}-hdr.png`
-      anchor.click()
-      URL.revokeObjectURL(url)
+      triggerPngDownload(result.pngData, image.name)
 
       setDownloaded(true)
       window.setTimeout(() => setDownloaded(false), 2500)

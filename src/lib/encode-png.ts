@@ -270,7 +270,9 @@ export interface EncodePNGOptions {
 }
 
 function getDefaultCompressionBackend(): CompressionBackend {
-  return typeof CompressionStream === 'undefined' ? 'fflate' : 'compression-stream'
+  // Prefer deterministic JS compression by default. Some browser engines expose
+  // CompressionStream but can stall on large deflate workloads.
+  return 'fflate'
 }
 
 export async function encodePNG(width: number, height: number, pqPixels: Uint16Array, options: EncodePNGOptions = {}): Promise<Uint8Array> {

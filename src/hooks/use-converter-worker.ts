@@ -43,11 +43,16 @@ export function useConverterWorker(options: UseConverterWorkerOptions = {}) {
   const timeoutMs = options.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS
 
   const workerRef = useRef<Worker | null>(null)
+  const onWorkerFailureRef = useRef(options.onWorkerFailure)
   const nextRequestIdRef = useRef(1)
   const activeConvertRequestIdRef = useRef<number | null>(null)
   const activePreviewRequestIdRef = useRef<number | null>(null)
   const workerDecodeSupportRef = useRef<boolean | null>(null)
   const pendingRef = useRef(new Map<number, PendingRequest>())
+
+  useEffect(() => {
+    onWorkerFailureRef.current = options.onWorkerFailure
+  }, [options.onWorkerFailure])
 
   const cancelPendingById = useCallback((id: number, reason: string) => {
     const pending = pendingRef.current.get(id)
@@ -117,13 +122,13 @@ export function useConverterWorker(options: UseConverterWorkerOptions = {}) {
 
     worker.onerror = () => {
       const failure = new Error('Worker crashed during conversion')
-      options.onWorkerFailure?.(failure)
+      onWorkerFailureRef.current?.(failure)
       teardownWorker()
     }
 
     workerRef.current = worker
     return worker
-  }, [clearPendingById, options, teardownWorker])
+  }, [clearPendingById, teardownWorker])
 
   const submitRequest = useCallback(
     <TResponse extends WorkerSuccessResponse | WorkerPreviewSuccessResponse>(

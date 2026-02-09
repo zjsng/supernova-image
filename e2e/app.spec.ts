@@ -42,6 +42,9 @@ test('upload, preview update, and download flow works', async ({ page }) => {
 
   await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.toDataURL())).not.toBe(initialPreview)
 
+  const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download HDR PNG' }).click()
+  const download = await downloadPromise
   await expect(page.getByRole('button', { name: 'Converting...' })).toBeVisible()
+  expect(download.suggestedFilename()).toMatch(/-hdr\.png$/)
 })

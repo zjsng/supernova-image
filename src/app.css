@@ -961,7 +961,9 @@ body::after {
   text-decoration: underline;
   text-decoration-color: rgba(255, 255, 255, 0.3);
   text-underline-offset: 2px;
-  transition: color 0.2s, text-decoration-color 0.2s;
+  transition:
+    color 0.2s,
+    text-decoration-color 0.2s;
 }
 
 .seo-copy a:hover,
@@ -1369,7 +1371,6 @@ body::after {
   color: var(--accent);
   font-weight: 600;
 }
-
 
 /* ===== How It Works Responsive ===== */
 @media (max-width: 640px) {
