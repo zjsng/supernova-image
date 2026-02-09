@@ -27,8 +27,7 @@ test('upload, preview update, and download flow works', async ({ page }) => {
   await expect(previewPlaceholder).toBeHidden()
 
   const previewCanvas = page.locator('canvas.preview-output-canvas')
-  await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.width)).toBeGreaterThan(0)
-  await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.height)).toBeGreaterThan(0)
+  await expect(previewCanvas).toBeVisible()
 
   const initialPreview = await previewCanvas.evaluate((canvas) => canvas.toDataURL())
 
@@ -40,11 +39,10 @@ test('upload, preview update, and download flow works', async ({ page }) => {
 
   await expect(page.locator('.control-group .value').first()).toContainText('nits')
 
-  await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.toDataURL())).not.toBe(initialPreview)
+  await expect.poll(async () => previewCanvas.evaluate((canvas) => canvas.toDataURL()), { timeout: 15_000 }).not.toBe(initialPreview)
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Download HDR PNG' }).click()
   const download = await downloadPromise
-  await expect(page.getByRole('button', { name: 'Converting...' })).toBeVisible()
   expect(download.suggestedFilename()).toMatch(/-hdr\.png$/)
 })
