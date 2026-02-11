@@ -6,9 +6,7 @@ const fixturePath = path.resolve(process.cwd(), 'e2e/fixtures/test.png')
 async function getPreviewFingerprint(page: Page): Promise<string | null> {
   const previewImage = page.locator('img.preview-output-image')
   if ((await previewImage.count()) > 0) {
-    return previewImage.evaluate((image) =>
-      image.complete && image.naturalWidth > 0 ? `img:${image.currentSrc || image.src}` : null,
-    )
+    return previewImage.evaluate((image) => (image.complete && image.naturalWidth > 0 ? `img:${image.currentSrc || image.src}` : null))
   }
 
   const previewCanvas = page.locator('canvas.preview-output-canvas')
@@ -78,9 +76,6 @@ test('upload, preview update, and download flow works', async ({ page }) => {
     .toBe(true)
   await expect(page.locator('.processing-overlay')).toBeHidden()
 
-  const [download] = await Promise.all([
-    page.waitForEvent('download'),
-    page.getByRole('button', { name: 'Download HDR PNG' }).click(),
-  ])
+  const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download HDR PNG' }).click()])
   expect(download.suggestedFilename()).toMatch(/-hdr\.png$/)
 })
