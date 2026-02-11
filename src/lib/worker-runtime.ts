@@ -1,6 +1,6 @@
 import { processPixels, processPreviewPixels, type PixelBufferLike } from './pq'
 import { encodePNG } from './encode-png'
-import { DEFAULT_LOOK_CONTROLS, normalizeLookControls, PREVIEW_MAX_LONG_EDGE_DEFAULT, type LookControls } from './look-controls'
+import { normalizeLookControls, PREVIEW_MAX_LONG_EDGE_DEFAULT, type LookControls } from './look-controls'
 import type { EncodeStats, ConversionStats } from './perf-types'
 import type {
   WorkerConvertRequest,
@@ -82,6 +82,10 @@ function validateConvertRequest(request: WorkerConvertRequest): void {
 function validatePreviewRequest(request: WorkerPreviewRequest): void {
   validateSharedRequestFields(request)
 
+  if (request.output !== undefined && request.output !== 'sdr-rgba' && request.output !== 'hdr-png') {
+    throw runtimeError('preview output must be either sdr-rgba or hdr-png', 'BAD_INPUT')
+  }
+
   if (request.previewMaxLongEdge !== undefined) {
     if (!isFiniteNumber(request.previewMaxLongEdge) || request.previewMaxLongEdge <= 0) {
       throw runtimeError('previewMaxLongEdge must be a finite positive number', 'BAD_INPUT')
@@ -128,7 +132,6 @@ function normalizePreviewMaxLongEdge(previewMaxLongEdge?: number): number {
 
 function resolveLookControls(request: { lookControls?: Partial<LookControls>; gamma?: number }): LookControls {
   return normalizeLookControls({
-    ...DEFAULT_LOOK_CONTROLS,
     ...(typeof request.gamma === 'number' ? { gamma: request.gamma } : {}),
     ...(request.lookControls ?? {}),
   })
@@ -324,6 +327,31 @@ export class WorkerRuntime {
       if (this.isCancelled(request.id)) return null
 
       const lookControls = resolveLookControls(request)
+      const output = request.output ?? 'sdr-rgba'
+
+      if (output === 'hdr-png') {
+        const pqPixels = processPixels(
+          previewImageData,
+          request.boost,
+          lookControls,
+          this.getOrCreatePqBuffer(previewImageData.width, previewImageData.height),
+        )
+        if (this.isCancelled(request.id)) return null
+
+        const pngData = await encodePNG(previewImageData.width, previewImageData.height, pqPixels)
+        if (this.isCancelled(request.id)) return null
+
+        const response: WorkerPreviewSuccessResponse = {
+          type: 'preview-result',
+          id: request.id,
+          ok: true,
+          width: previewImageData.width,
+          height: previewImageData.height,
+          pngData,
+        }
+        return response
+      }
+
       const pixels = processPreviewPixels(
         previewImageData,
         request.boost,

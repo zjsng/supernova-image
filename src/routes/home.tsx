@@ -17,6 +17,15 @@ interface ImageState {
   el: HTMLImageElement
 }
 
+function supportsHdrPreview(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false
+  const queries = ['(dynamic-range: high)', '(video-dynamic-range: high)', '(color-gamut: rec2020)']
+  return queries.some((query) => {
+    const media = window.matchMedia(query)
+    return media.media !== 'not all' && media.matches
+  })
+}
+
 function buildUserFacingError(error: unknown): string {
   const code = getWorkerErrorCode(error)
   if (code === 'DECODE_UNSUPPORTED') {
@@ -61,11 +70,14 @@ export function Home() {
   const [dragover, setDragover] = useState(false)
   const [previewPending, setPreviewPending] = useState(false)
   const [previewReady, setPreviewReady] = useState(false)
+  const [previewImageSrc, setPreviewImageSrc] = useState<string | null>(null)
+  const [hdrPreviewEnabled, setHdrPreviewEnabled] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const decodeCanvasRef = useRef<HTMLCanvasElement>(null)
   const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const previewDebounceTimerRef = useRef<number | null>(null)
+  const previewImageUrlRef = useRef<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const { runWorkerConvert, runWorkerPreview, cancelActivePreview, shouldTryWorkerDecode, markWorkerDecodeSupport, teardownWorker } =
@@ -82,7 +94,17 @@ export function Home() {
     }
   }, [])
 
-  const clearPreviewCanvas = useCallback(() => {
+  const revokePreviewImageUrl = useCallback(() => {
+    if (previewImageUrlRef.current) {
+      URL.revokeObjectURL(previewImageUrlRef.current)
+      previewImageUrlRef.current = null
+    }
+  }, [])
+
+  const clearPreviewOutput = useCallback(() => {
+    revokePreviewImageUrl()
+    setPreviewImageSrc(null)
+
     const canvas = previewCanvasRef.current
     if (!canvas) {
       setPreviewReady(false)
@@ -92,14 +114,19 @@ export function Home() {
     const context = canvas.getContext('2d')
     if (context) context.clearRect(0, 0, canvas.width, canvas.height)
     setPreviewReady(false)
+  }, [revokePreviewImageUrl])
+
+  useEffect(() => {
+    setHdrPreviewEnabled(supportsHdrPreview())
   }, [])
 
   useEffect(() => {
     return () => {
       clearPreviewDebounce()
+      revokePreviewImageUrl()
       teardownWorker()
     }
-  }, [clearPreviewDebounce, teardownWorker])
+  }, [clearPreviewDebounce, revokePreviewImageUrl, teardownWorker])
 
   const decodePixelsOnMainThread = useCallback(
     (
@@ -125,67 +152,102 @@ export function Home() {
     [],
   )
 
-  const drawPreview = useCallback((result: WorkerPreviewSuccessResponse) => {
-    const canvas = previewCanvasRef.current
-    if (!canvas) return
+  const drawPreview = useCallback(
+    (result: WorkerPreviewSuccessResponse) => {
+      if ('pngData' in result) {
+        revokePreviewImageUrl()
+        const blob = new Blob([new Uint8Array(result.pngData)], { type: 'image/png' })
+        const url = URL.createObjectURL(blob)
+        previewImageUrlRef.current = url
+        setPreviewImageSrc(url)
+        setPreviewReady(true)
+        return
+      }
 
-    canvas.width = result.width
-    canvas.height = result.height
+      setPreviewImageSrc(null)
+      revokePreviewImageUrl()
 
-    const context = canvas.getContext('2d', { willReadFrequently: true })
-    if (!context) return
+      const canvas = previewCanvasRef.current
+      if (!canvas) return
 
-    context.putImageData(new ImageData(new Uint8ClampedArray(result.pixels), result.width, result.height), 0, 0)
-    setPreviewReady(true)
-  }, [])
+      canvas.width = result.width
+      canvas.height = result.height
+
+      const context = canvas.getContext('2d', { willReadFrequently: true })
+      if (!context) return
+
+      context.putImageData(new ImageData(new Uint8ClampedArray(result.pixels), result.width, result.height), 0, 0)
+      setPreviewReady(true)
+    },
+    [revokePreviewImageUrl],
+  )
 
   const requestPreview = useCallback(
     async (currentImage: ImageState) => {
-      setPreviewPending(true)
-      setErrorMessage(null)
-
-      try {
-        let result: WorkerPreviewSuccessResponse
-
+      const requestWithOutput = async (output: 'sdr-rgba' | 'hdr-png', previewBoost: number): Promise<WorkerPreviewSuccessResponse> => {
         if (shouldTryWorkerDecode(Boolean(currentImage.file))) {
           try {
-            result = await runWorkerPreview({
+            const response = await runWorkerPreview({
               file: currentImage.file,
-              boost: BOOST_UI_MIN,
+              boost: previewBoost,
               lookControls,
+              output,
               previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
             })
             markWorkerDecodeSupport(true)
+            return response
           } catch {
             // Worker-side decode can fail even when browser decode works (headless/driver quirks).
             // Always fall back to main-thread canvas decode before surfacing the error.
             markWorkerDecodeSupport(false)
             const { pixels, width, height } = decodePixelsOnMainThread(currentImage)
-            result = await runWorkerPreview(
+            return runWorkerPreview(
               {
                 pixels,
                 width,
                 height,
-                boost: BOOST_UI_MIN,
+                boost: previewBoost,
                 lookControls,
+                output,
                 previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
               },
               [pixels.buffer],
             )
           }
-        } else {
-          const { pixels, width, height } = decodePixelsOnMainThread(currentImage)
-          result = await runWorkerPreview(
-            {
-              pixels,
-              width,
-              height,
-              boost: BOOST_UI_MIN,
-              lookControls,
-              previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
-            },
-            [pixels.buffer],
-          )
+        }
+
+        const { pixels, width, height } = decodePixelsOnMainThread(currentImage)
+        return runWorkerPreview(
+          {
+            pixels,
+            width,
+            height,
+            boost: previewBoost,
+            lookControls,
+            output,
+            previewMaxLongEdge: PREVIEW_MAX_LONG_EDGE_DEFAULT,
+          },
+          [pixels.buffer],
+        )
+      }
+
+      setPreviewPending(true)
+      setErrorMessage(null)
+
+      try {
+        const preferredOutput = hdrPreviewEnabled ? 'hdr-png' : 'sdr-rgba'
+        const preferredBoost = hdrPreviewEnabled ? boost : BOOST_UI_MIN
+
+        let result: WorkerPreviewSuccessResponse
+        try {
+          result = await requestWithOutput(preferredOutput, preferredBoost)
+        } catch (error) {
+          if (preferredOutput === 'hdr-png') {
+            result = await requestWithOutput('sdr-rgba', BOOST_UI_MIN)
+            setHdrPreviewEnabled(false)
+          } else {
+            throw error
+          }
         }
 
         drawPreview(result)
@@ -198,7 +260,16 @@ export function Home() {
         setPreviewPending(false)
       }
     },
-    [decodePixelsOnMainThread, drawPreview, lookControls, markWorkerDecodeSupport, runWorkerPreview, shouldTryWorkerDecode],
+    [
+      boost,
+      decodePixelsOnMainThread,
+      drawPreview,
+      hdrPreviewEnabled,
+      lookControls,
+      markWorkerDecodeSupport,
+      runWorkerPreview,
+      shouldTryWorkerDecode,
+    ],
   )
 
   const loadImage = useCallback(
@@ -209,7 +280,7 @@ export function Home() {
       cancelActivePreview()
       clearPreviewDebounce()
       setPreviewPending(false)
-      clearPreviewCanvas()
+      clearPreviewOutput()
 
       if (image?.src) URL.revokeObjectURL(image.src)
 
@@ -220,7 +291,7 @@ export function Home() {
       }
       img.src = url
     },
-    [cancelActivePreview, clearPreviewCanvas, clearPreviewDebounce, image],
+    [cancelActivePreview, clearPreviewDebounce, clearPreviewOutput, image],
   )
 
   const handleDrop = useCallback(
@@ -259,10 +330,10 @@ export function Home() {
     cancelActivePreview()
     clearPreviewDebounce()
     setPreviewPending(false)
-    clearPreviewCanvas()
+    clearPreviewOutput()
     setErrorMessage(null)
     setImage(null)
-  }, [cancelActivePreview, clearPreviewCanvas, clearPreviewDebounce, image])
+  }, [cancelActivePreview, clearPreviewDebounce, clearPreviewOutput, image])
 
   const setLookControl = useCallback((key: keyof LookControls, value: number) => {
     setLookControls((previous) => ({ ...previous, [key]: value }))
@@ -346,6 +417,7 @@ export function Home() {
         image={image}
         dragover={dragover}
         previewReady={previewReady}
+        previewImageSrc={previewImageSrc}
         processing={processing}
         previewPending={previewPending}
         fileInputRef={fileInputRef}
@@ -367,6 +439,7 @@ export function Home() {
           lookControls={lookControls}
           processing={processing}
           downloaded={downloaded}
+          hdrPreviewEnabled={hdrPreviewEnabled}
           onSetBoost={setBoost}
           onSetLookControl={setLookControl}
           onReset={reset}

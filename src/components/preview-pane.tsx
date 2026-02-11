@@ -11,6 +11,7 @@ interface PreviewPaneProps {
   image: PreviewImage | null
   dragover: boolean
   previewReady: boolean
+  previewImageSrc: string | null
   processing: boolean
   previewPending: boolean
   fileInputRef: RefObject<HTMLInputElement>
@@ -29,6 +30,7 @@ export function PreviewPane({
   image,
   dragover,
   previewReady,
+  previewImageSrc,
   processing,
   previewPending,
   fileInputRef,
@@ -86,7 +88,11 @@ export function PreviewPane({
           <figure class="preview-panel">
             <figcaption class="preview-panel__label">After</figcaption>
             <div class="preview-output">
-              <canvas ref={previewCanvasRef} class="preview-output-canvas" />
+              {previewImageSrc ? (
+                <img src={previewImageSrc} alt="Converted preview" class="preview-output-image" />
+              ) : (
+                <canvas ref={previewCanvasRef} class="preview-output-canvas" />
+              )}
               {!previewReady && <div class="preview-placeholder">Adjust controls to render preview</div>}
             </div>
           </figure>

@@ -207,8 +207,8 @@ export function HowItWorks() {
       <section class="how-hero">
         <h1>How HDR PNG Conversion Works</h1>
         <p>
-          Supernova converts standard images into HDR PNGs that glow on HDR displays. You get a fast live SDR before/after preview while
-          editing, then the final download is encoded with full HDR PQ brightness and metadata.
+          Supernova converts standard images into HDR PNGs that glow on HDR displays. On compatible browsers/displays, preview shows the
+          converted HDR output directly; otherwise it falls back to fast SDR preview while the final download stays full HDR PQ.
         </p>
       </section>
 
@@ -220,7 +220,8 @@ export function HowItWorks() {
             <strong>1.</strong> Decode your image into raw 8-bit RGBA pixels via Canvas
           </div>
           <div class="pipeline-step-text">
-            <strong>2.</strong> Live preview path: run a fast SDR approximation on a downscaled copy for responsive before/after updates
+            <strong>2.</strong> Live preview path: on compatible browsers/displays, render a downscaled converted HDR PNG; otherwise use a
+            fast SDR approximation for responsive updates
           </div>
           <div class="pipeline-step-text">
             <strong>3.</strong> Export path: apply look controls in linear light, remap boost to HDR luminance, then PQ-encode to 16-bit
@@ -242,11 +243,12 @@ export function HowItWorks() {
             <strong>Saturation</strong> — primary color intensity control shown in the main panel for quick edits.
           </li>
           <li>
-            <strong>Advanced</strong> — Gamma, Contrast, Highlight Roll-off, Shadow Lift, Shadow Glow, and Vibrance for finer grading.
+            <strong>Advanced</strong> — Exposure, Temperature, Tint, Gamma, Contrast, Blacks, Whites, Clarity, Highlight Saturation,
+            Highlight Roll-off, Shadow Lift, Shadow Glow, and Vibrance for finer grading.
           </li>
           <li>
-            <strong>Preview behavior</strong> — preview is SDR approximation for speed; it does not display final HDR luminance boost
-            exactly.
+            <strong>Preview behavior</strong> — preview uses the converted HDR PNG when the browser/display supports it, with automatic SDR
+            fallback otherwise.
           </li>
         </ul>
       </RevealSection>
@@ -345,7 +347,7 @@ export function HowItWorks() {
                 name: 'Why does preview brightness differ from the final HDR download?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'The editor preview is a fast SDR approximation for responsive slider updates. The downloaded PNG uses the full HDR pipeline with PQ brightness and Rec.2020 metadata, so highlights can be much brighter on HDR displays.',
+                  text: 'On compatible browsers and HDR displays, preview uses a downscaled converted HDR PNG. Otherwise it falls back to SDR approximation for speed, so final downloaded HDR output can still appear brighter.',
                 },
               },
               {

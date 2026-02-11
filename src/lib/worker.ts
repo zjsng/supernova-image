@@ -9,6 +9,10 @@ function postResult(message: WorkerResponseMessage): void {
     return
   }
   if (message.type === 'preview-result' && message.ok) {
+    if ('pngData' in message) {
+      self.postMessage(message, { transfer: [message.pngData.buffer] })
+      return
+    }
     self.postMessage(message, { transfer: [message.pixels.buffer] })
     return
   }

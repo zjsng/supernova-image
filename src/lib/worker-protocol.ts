@@ -22,6 +22,7 @@ export interface WorkerPreviewRequest {
   id: number
   boost: number
   lookControls?: Partial<LookControls>
+  output?: 'sdr-rgba' | 'hdr-png'
   previewMaxLongEdge?: number
   file?: Blob
   pixels?: Uint8ClampedArray
@@ -52,7 +53,7 @@ export interface WorkerErrorResponse {
   code?: 'DECODE_UNSUPPORTED' | 'BAD_INPUT' | 'INTERNAL'
 }
 
-export interface WorkerPreviewSuccessResponse {
+export interface WorkerPreviewPixelsSuccessResponse {
   type: 'preview-result'
   id: number
   ok: true
@@ -60,6 +61,17 @@ export interface WorkerPreviewSuccessResponse {
   height: number
   pixels: Uint8ClampedArray
 }
+
+export interface WorkerPreviewPngSuccessResponse {
+  type: 'preview-result'
+  id: number
+  ok: true
+  width: number
+  height: number
+  pngData: Uint8Array
+}
+
+export type WorkerPreviewSuccessResponse = WorkerPreviewPixelsSuccessResponse | WorkerPreviewPngSuccessResponse
 
 export interface WorkerPreviewErrorResponse {
   type: 'preview-result'

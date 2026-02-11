@@ -375,6 +375,13 @@ body::after {
   object-fit: contain;
 }
 
+.preview-output-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .preview-placeholder {
   position: absolute;
   inset: 0;

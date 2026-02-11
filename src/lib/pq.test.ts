@@ -280,13 +280,95 @@ describe('preview processing path', () => {
     expect(Math.abs(contrastLuma - 128)).toBeGreaterThanOrEqual(Math.abs(neutralLuma - 128))
   })
 
+  it('exposure brightens the image uniformly', () => {
+    const sample = pixel(110, 90, 70)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const exposed = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, exposure: 1.0 })
+    expect(exposed[0]).toBeGreaterThan(neutral[0])
+    expect(exposed[1]).toBeGreaterThan(neutral[1])
+    expect(exposed[2]).toBeGreaterThan(neutral[2])
+  })
+
+  it('temperature shifts balance toward warm colors when increased', () => {
+    const sample = pixel(180, 180, 180)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const warm = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, temperature: 1.0 })
+    const neutralDelta = neutral[0] - neutral[2]
+    const warmDelta = warm[0] - warm[2]
+    expect(warmDelta).toBeGreaterThanOrEqual(neutralDelta)
+  })
+
+  it('tint shifts balance toward magenta when increased', () => {
+    const sample = pixel(180, 180, 180)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const tinted = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, tint: 1.0 })
+    const neutralGreenBias = neutral[1] - (neutral[0] + neutral[2]) / 2
+    const tintedGreenBias = tinted[1] - (tinted[0] + tinted[2]) / 2
+    expect(tintedGreenBias).toBeLessThanOrEqual(neutralGreenBias)
+  })
+
+  it('blacks and whites adjust lower and upper tonal regions independently', () => {
+    const dark = pixel(40, 40, 40)
+    const bright = pixel(220, 220, 220)
+    const darkNeutral = processPixels(dark, 5, DEFAULT_LOOK_CONTROLS)
+    const brightNeutral = processPixels(bright, 5, DEFAULT_LOOK_CONTROLS)
+    const darkBlacks = processPixels(dark, 5, { ...DEFAULT_LOOK_CONTROLS, blacks: 0.4 })
+    const brightWhites = processPixels(bright, 5, { ...DEFAULT_LOOK_CONTROLS, whites: 0.4 })
+    expect(darkBlacks[1]).toBeGreaterThan(darkNeutral[1])
+    expect(brightWhites[1]).toBeGreaterThan(brightNeutral[1])
+  })
+
+  it('clarity increases tonal separation between dark and bright midtones', () => {
+    const dark = pixel(90, 90, 90)
+    const bright = pixel(170, 170, 170)
+    const darkNeutral = processPixels(dark, 5, DEFAULT_LOOK_CONTROLS)
+    const brightNeutral = processPixels(bright, 5, DEFAULT_LOOK_CONTROLS)
+    const darkClarity = processPixels(dark, 5, { ...DEFAULT_LOOK_CONTROLS, clarity: 0.5 })
+    const brightClarity = processPixels(bright, 5, { ...DEFAULT_LOOK_CONTROLS, clarity: 0.5 })
+    const neutralSpread = brightNeutral[1] - darkNeutral[1]
+    const claritySpread = brightClarity[1] - darkClarity[1]
+    expect(claritySpread).toBeGreaterThanOrEqual(neutralSpread)
+  })
+
+  it('highlight saturation reduces bright chroma when lowered', () => {
+    const sample = pixel(255, 180, 120)
+    const neutral = processPixels(sample, 8, DEFAULT_LOOK_CONTROLS)
+    const reduced = processPixels(sample, 8, { ...DEFAULT_LOOK_CONTROLS, highlightSaturation: 0.7 })
+    const neutralSpread = Math.max(neutral[0], neutral[1], neutral[2]) - Math.min(neutral[0], neutral[1], neutral[2])
+    const reducedSpread = Math.max(reduced[0], reduced[1], reduced[2]) - Math.min(reduced[0], reduced[1], reduced[2])
+    expect(reducedSpread).toBeLessThanOrEqual(neutralSpread)
+  })
+
   it('shadow lift brightens dark pixels', () => {
     const sample = pixel(12, 12, 12)
-    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
-    const lifted = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
+    const neutral = processPixels(sample, 5, DEFAULT_LOOK_CONTROLS)
+    const lifted = processPixels(sample, 5, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
     expect(lifted[0]).toBeGreaterThanOrEqual(neutral[0])
     expect(lifted[1]).toBeGreaterThanOrEqual(neutral[1])
     expect(lifted[2]).toBeGreaterThanOrEqual(neutral[2])
+  })
+
+  it('shadow lift brightens bright pixels too', () => {
+    const sample = pixel(220, 220, 220)
+    const neutral = processPixels(sample, 5, DEFAULT_LOOK_CONTROLS)
+    const lifted = processPixels(sample, 5, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
+    expect(lifted[0]).toBeGreaterThanOrEqual(neutral[0])
+    expect(lifted[1]).toBeGreaterThanOrEqual(neutral[1])
+    expect(lifted[2]).toBeGreaterThanOrEqual(neutral[2])
+  })
+
+  it('shadow lift keeps true black unchanged', () => {
+    const sample = pixel(0, 0, 0)
+    const neutral = processPixels(sample, 10, DEFAULT_LOOK_CONTROLS)
+    const lifted = processPixels(sample, 10, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
+    expect([...lifted]).toEqual([...neutral])
+  })
+
+  it('shadow lift is inert when there is no HDR headroom', () => {
+    const sample = pixel(120, 80, 40)
+    const neutral = processPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const lifted = processPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, shadowLift: 0.25 })
+    expect([...lifted]).toEqual([...neutral])
   })
 
   it('highlight roll-off reduces preview clipping tendency at high boost', () => {

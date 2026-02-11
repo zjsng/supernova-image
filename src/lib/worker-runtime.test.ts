@@ -46,6 +46,20 @@ describe('validateWorkerRequest', () => {
     ).not.toThrow()
   })
 
+  it('rejects invalid preview output modes', () => {
+    expect(() =>
+      validateWorkerRequest({
+        type: 'preview',
+        id: 6,
+        boost: 1,
+        output: 'hdr-jpeg' as never,
+        pixels: new Uint8ClampedArray([255, 255, 255, 255]),
+        width: 1,
+        height: 1,
+      }),
+    ).toThrow('preview output must be either sdr-rgba or hdr-png')
+  })
+
   it('rejects convert requests with invalid gamma', () => {
     expect(() =>
       validateWorkerRequest({
@@ -127,7 +141,36 @@ describe('WorkerRuntime', () => {
     if (response?.type === 'preview-result' && response.ok) {
       expect(response.width).toBe(1)
       expect(response.height).toBe(1)
-      expect(response.pixels.length).toBe(4)
+      expect('pixels' in response).toBe(true)
+      if ('pixels' in response) {
+        expect(response.pixels.length).toBe(4)
+      }
+    }
+  })
+
+  it('returns HDR preview PNG when requested', async () => {
+    const runtime = new WorkerRuntime()
+    const response = await runtime.handle({
+      type: 'preview',
+      id: 8,
+      boost: 5,
+      output: 'hdr-png',
+      pixels: new Uint8ClampedArray([120, 80, 40, 255]),
+      width: 1,
+      height: 1,
+      previewMaxLongEdge: 1024,
+    })
+
+    expect(response).not.toBeNull()
+    expect(response?.type).toBe('preview-result')
+    expect(response && response.ok).toBe(true)
+    if (response?.type === 'preview-result' && response.ok) {
+      expect(response.width).toBe(1)
+      expect(response.height).toBe(1)
+      expect('pngData' in response).toBe(true)
+      if ('pngData' in response) {
+        expect(response.pngData).toEqual(new Uint8Array([1, 2, 3, 4]))
+      }
     }
   })
 

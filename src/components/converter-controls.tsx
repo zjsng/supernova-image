@@ -1,5 +1,5 @@
 import { BOOST_UI_MAX, BOOST_UI_MIN, boostToTargetNits } from '../lib/hdr-boost'
-import { LOOK_CONTROL_RANGES, type LookControls } from '../lib/look-controls'
+import { LOOK_CONTROL_KEYS, LOOK_CONTROL_RANGES, type LookControls } from '../lib/look-controls'
 
 interface ConverterControlsProps {
   imageName: string
@@ -9,10 +9,31 @@ interface ConverterControlsProps {
   lookControls: LookControls
   processing: boolean
   downloaded: boolean
+  hdrPreviewEnabled: boolean
   onSetBoost: (value: number) => void
   onSetLookControl: (key: keyof LookControls, value: number) => void
   onReset: () => void
   onConvert: () => void
+}
+
+type LookControlKey = keyof LookControls
+
+const PRIMARY_CONTROL_KEYS: LookControlKey[] = ['saturation']
+const PRIMARY_CONTROL_KEY_SET = new Set<LookControlKey>(PRIMARY_CONTROL_KEYS)
+const ADVANCED_CONTROL_KEYS = LOOK_CONTROL_KEYS.filter((key) => !PRIMARY_CONTROL_KEY_SET.has(key))
+
+const CONTROL_DECIMAL_OVERRIDES: Partial<Record<LookControlKey, number>> = {
+  exposure: 1,
+  gamma: 1,
+}
+
+const CONTROL_LABEL_OVERRIDES: Partial<Record<LookControlKey, string>> = {
+  highlightRollOff: 'Highlight Roll-off',
+}
+
+const CONTROL_ID_OVERRIDES: Partial<Record<LookControlKey, string>> = {
+  highlightRollOff: 'rolloff-range',
+  shadowLift: 'shadow-range',
 }
 
 function rangeBackground(value: number, min: number, max: number): string {
@@ -24,6 +45,30 @@ function downloadButtonLabel(processing: boolean, downloaded: boolean): string {
   if (processing) return 'Converting...'
   if (downloaded) return 'Downloaded!'
   return 'Download HDR PNG'
+}
+
+function camelToWords(key: string): string {
+  return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+}
+
+function kebabCase(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+    .replace(/\s+/g, '-')
+    .toLowerCase()
+}
+
+function controlId(key: LookControlKey): string {
+  return CONTROL_ID_OVERRIDES[key] ?? `${kebabCase(key)}-range`
+}
+
+function controlLabel(key: LookControlKey): string {
+  const normalized = camelToWords(key)
+  return CONTROL_LABEL_OVERRIDES[key] ?? `${normalized.slice(0, 1).toUpperCase()}${normalized.slice(1)}`
+}
+
+function controlDecimals(key: LookControlKey): number {
+  return CONTROL_DECIMAL_OVERRIDES[key] ?? 2
 }
 
 function ControlGroup(props: {
@@ -62,11 +107,30 @@ export function ConverterControls({
   lookControls,
   processing,
   downloaded,
+  hdrPreviewEnabled,
   onSetBoost,
   onSetLookControl,
   onReset,
   onConvert,
 }: ConverterControlsProps) {
+  const renderLookControl = (key: LookControlKey) => {
+    const range = LOOK_CONTROL_RANGES[key]
+    const value = lookControls[key]
+    return (
+      <ControlGroup
+        key={key}
+        id={controlId(key)}
+        label={controlLabel(key)}
+        min={range.min}
+        max={range.max}
+        step={range.step}
+        value={value}
+        onInput={(nextValue) => onSetLookControl(key, nextValue)}
+        displayValue={value.toFixed(controlDecimals(key))}
+      />
+    )
+  }
+
   return (
     <>
       <div class="controls">
@@ -81,89 +145,18 @@ export function ConverterControls({
           displayValue={`${boost.toFixed(1)} · ~${Math.round(boostToTargetNits(boost)).toLocaleString()} nits`}
         />
 
-        <ControlGroup
-          id="saturation-range"
-          label="Saturation"
-          min={LOOK_CONTROL_RANGES.saturation.min}
-          max={LOOK_CONTROL_RANGES.saturation.max}
-          step={LOOK_CONTROL_RANGES.saturation.step}
-          value={lookControls.saturation}
-          onInput={(value) => onSetLookControl('saturation', value)}
-          displayValue={lookControls.saturation.toFixed(2)}
-        />
+        {PRIMARY_CONTROL_KEYS.map(renderLookControl)}
       </div>
 
-      <div class="preview-note">Preview is SDR approximation. Boost affects final HDR export.</div>
+      <div class="preview-note">
+        {hdrPreviewEnabled
+          ? 'Preview is using converted HDR PNG output on this browser/display.'
+          : 'Preview is SDR approximation. Boost affects final HDR export.'}
+      </div>
 
       <details class="advanced-controls">
         <summary>Advanced</summary>
-        <div class="advanced-controls__grid">
-          <ControlGroup
-            id="gamma-range"
-            label="Gamma"
-            min={LOOK_CONTROL_RANGES.gamma.min}
-            max={LOOK_CONTROL_RANGES.gamma.max}
-            step={LOOK_CONTROL_RANGES.gamma.step}
-            value={lookControls.gamma}
-            onInput={(value) => onSetLookControl('gamma', value)}
-            displayValue={lookControls.gamma.toFixed(1)}
-          />
-
-          <ControlGroup
-            id="contrast-range"
-            label="Contrast"
-            min={LOOK_CONTROL_RANGES.contrast.min}
-            max={LOOK_CONTROL_RANGES.contrast.max}
-            step={LOOK_CONTROL_RANGES.contrast.step}
-            value={lookControls.contrast}
-            onInput={(value) => onSetLookControl('contrast', value)}
-            displayValue={lookControls.contrast.toFixed(2)}
-          />
-
-          <ControlGroup
-            id="rolloff-range"
-            label="Highlight Roll-off"
-            min={LOOK_CONTROL_RANGES.highlightRollOff.min}
-            max={LOOK_CONTROL_RANGES.highlightRollOff.max}
-            step={LOOK_CONTROL_RANGES.highlightRollOff.step}
-            value={lookControls.highlightRollOff}
-            onInput={(value) => onSetLookControl('highlightRollOff', value)}
-            displayValue={lookControls.highlightRollOff.toFixed(2)}
-          />
-
-          <ControlGroup
-            id="shadow-range"
-            label="Shadow Lift"
-            min={LOOK_CONTROL_RANGES.shadowLift.min}
-            max={LOOK_CONTROL_RANGES.shadowLift.max}
-            step={LOOK_CONTROL_RANGES.shadowLift.step}
-            value={lookControls.shadowLift}
-            onInput={(value) => onSetLookControl('shadowLift', value)}
-            displayValue={lookControls.shadowLift.toFixed(2)}
-          />
-
-          <ControlGroup
-            id="shadow-glow-range"
-            label="Shadow Glow"
-            min={LOOK_CONTROL_RANGES.shadowGlow.min}
-            max={LOOK_CONTROL_RANGES.shadowGlow.max}
-            step={LOOK_CONTROL_RANGES.shadowGlow.step}
-            value={lookControls.shadowGlow}
-            onInput={(value) => onSetLookControl('shadowGlow', value)}
-            displayValue={lookControls.shadowGlow.toFixed(2)}
-          />
-
-          <ControlGroup
-            id="vibrance-range"
-            label="Vibrance"
-            min={LOOK_CONTROL_RANGES.vibrance.min}
-            max={LOOK_CONTROL_RANGES.vibrance.max}
-            step={LOOK_CONTROL_RANGES.vibrance.step}
-            value={lookControls.vibrance}
-            onInput={(value) => onSetLookControl('vibrance', value)}
-            displayValue={lookControls.vibrance.toFixed(2)}
-          />
-        </div>
+        <div class="advanced-controls__grid">{ADVANCED_CONTROL_KEYS.map(renderLookControl)}</div>
       </details>
 
       <div class="btn-row">

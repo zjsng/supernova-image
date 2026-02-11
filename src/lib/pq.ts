@@ -25,6 +25,13 @@ const c3 = (2392 / 4096) * 32
 // BT.2020 luma coefficients (Rec.2100) for luminance-domain adjustments.
 const BT2020_LUMA = [0.2627, 0.678, 0.0593] as const
 const MID_GRAY_PIVOT = 0.18
+const HIGHLIGHT_DESAT_START = 0.55
+const HIGHLIGHT_DESAT_MAX = 0.2
+const WB_TEMP_STRENGTH = 0.12
+const WB_TINT_STRENGTH = 0.1
+const BLACKS_STRENGTH = 0.35
+const WHITES_STRENGTH = 0.35
+const CLARITY_STRENGTH = 0.45
 
 // Adaptive shoulder parameters.
 const SHOULDER_KNEE_RATIO = 0.78
@@ -39,6 +46,34 @@ const pqLUT = new Float32Array(PQ_LUT_SIZE + 1)
 
 type PQEncodeMode = 'lut' | 'exact'
 let pqEncodeMode: PQEncodeMode = 'lut'
+type RGBTuple = [number, number, number]
+
+interface LookRuntime {
+  exposureGain: number
+  sat: number
+  vibranceDelta: number
+  contrast: number
+  blacks: number
+  whites: number
+  clarity: number
+  highlightSaturation: number
+  shadowLift: number
+  shadowGlow: number
+  shadowLiftStrength: number
+  whiteBalanceEnabled: boolean
+  wbR: number
+  wbG: number
+  wbB: number
+  toneControlEnabled: boolean
+  scenePeak: number
+  shoulderKnee: number
+}
+
+interface ProcessingContext {
+  lut: Float32Array
+  gain: number
+  runtime: LookRuntime
+}
 
 export const SRGB_TO_BT2020 = [0.6274039, 0.329283, 0.0433131, 0.0690973, 0.9195404, 0.0113623, 0.0163914, 0.0880133, 0.8955953] as const
 
@@ -56,6 +91,240 @@ for (let i = 0; i <= PQ_LUT_SIZE; i++) {
 
 function clamp(v: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, v))
+}
+
+function shadowLiftHDRStrength(scenePeak: number): number {
+  if (scenePeak <= SDR_TO_PQ_SCALE) return 0.0
+  const normalizedHeadroom = (scenePeak - SDR_TO_PQ_SCALE) / (1.0 - SDR_TO_PQ_SCALE)
+  return Math.sqrt(clamp(normalizedHeadroom, 0.0, 1.0))
+}
+
+function applyShadowLiftToLuma(yMapped: number, shadowLift: number, hdrStrength: number): number {
+  if (shadowLift <= 0.0) return yMapped
+  if (hdrStrength <= 0.0) return yMapped
+  if (yMapped <= 0.0) return yMapped
+  const gain = 1.0 + shadowLift * hdrStrength
+  return yMapped * gain
+}
+
+function toneReferencePeak(scenePeak: number): number {
+  return Math.max(scenePeak, SDR_TO_PQ_SCALE)
+}
+
+function highlightSaturationFactor(y: number, scenePeak: number, highlightSaturation: number): number {
+  if (highlightSaturation === 1.0) return 1.0
+  const normalizedY = clamp(y / toneReferencePeak(scenePeak), 0.0, 1.0)
+  const weight = normalizedY * normalizedY
+  return 1.0 + (highlightSaturation - 1.0) * weight
+}
+
+function highlightDesaturationAmount(y: number, scenePeak: number): number {
+  const hdrStrength = shadowLiftHDRStrength(scenePeak)
+  if (hdrStrength <= 0.0 || scenePeak <= 1e-6) return 0.0
+
+  const normalizedY = clamp(y / toneReferencePeak(scenePeak), 0.0, 1.0)
+  const t = clamp((normalizedY - HIGHLIGHT_DESAT_START) / (1.0 - HIGHLIGHT_DESAT_START), 0.0, 1.0)
+  return HIGHLIGHT_DESAT_MAX * hdrStrength * t * t
+}
+
+function applyToneControlsToLuma(
+  y: number,
+  scenePeak: number,
+  contrast: number,
+  shadowLift: number,
+  shadowLiftStrength: number,
+  blacks: number,
+  whites: number,
+  clarity: number,
+): number {
+  const referencePeak = toneReferencePeak(scenePeak)
+  let yMapped = MID_GRAY_PIVOT + (y - MID_GRAY_PIVOT) * contrast
+  yMapped = applyShadowLiftToLuma(yMapped, shadowLift, shadowLiftStrength)
+
+  const tonePos = clamp(yMapped / referencePeak, 0.0, 1.0)
+  if (blacks !== 0.0) {
+    const shadowWeight = (1.0 - tonePos) * (1.0 - tonePos)
+    yMapped += blacks * BLACKS_STRENGTH * shadowWeight * referencePeak
+  }
+  if (whites !== 0.0) {
+    const highlightWeight = tonePos * tonePos
+    yMapped += whites * WHITES_STRENGTH * highlightWeight * referencePeak
+  }
+  if (clarity !== 0.0) {
+    const midWeight = 1.0 - Math.abs(2.0 * tonePos - 1.0)
+    yMapped += clarity * CLARITY_STRENGTH * (tonePos - 0.5) * midWeight * referencePeak
+  }
+
+  return yMapped
+}
+
+function createLookRuntime(look: LookControls, scenePeak: number, shoulderKnee: number): LookRuntime {
+  const temperature = look.temperature
+  const tint = look.tint
+  const shadowLiftStrength = shadowLiftHDRStrength(scenePeak)
+  const whiteBalanceEnabled = temperature !== 0.0 || tint !== 0.0
+  const wbTemp = temperature * WB_TEMP_STRENGTH
+  const wbTint = tint * WB_TINT_STRENGTH
+
+  return {
+    exposureGain: Math.pow(2, look.exposure),
+    sat: look.saturation,
+    vibranceDelta: look.vibrance - 1.0,
+    contrast: look.contrast,
+    blacks: look.blacks,
+    whites: look.whites,
+    clarity: look.clarity,
+    highlightSaturation: look.highlightSaturation,
+    shadowLift: look.shadowLift,
+    shadowGlow: look.shadowGlow,
+    shadowLiftStrength,
+    whiteBalanceEnabled,
+    wbR: 1.0 + wbTemp + 0.5 * wbTint,
+    wbG: Math.max(0.5, 1.0 - 0.15 * Math.abs(wbTemp) - wbTint),
+    wbB: 1.0 - wbTemp + 0.5 * wbTint,
+    toneControlEnabled:
+      look.contrast !== 1.0 || look.shadowLift > 0.0 || look.blacks !== 0.0 || look.whites !== 0.0 || look.clarity !== 0.0,
+    scenePeak,
+    shoulderKnee,
+  }
+}
+
+function createProcessingContext(look: LookControls, gain: number): ProcessingContext {
+  const scenePeak = Math.min(gain, 1.0)
+  const baseShoulderKnee = clamp(scenePeak * SHOULDER_KNEE_RATIO, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
+  const shoulderKnee = clamp(baseShoulderKnee / look.highlightRollOff, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
+
+  return {
+    lut: getLinearizedGammaLUT(look.gamma),
+    gain,
+    runtime: createLookRuntime(look, scenePeak, shoulderKnee),
+  }
+}
+
+function gradeBt2020Pixel(r2020: number, g2020: number, b2020: number, runtime: LookRuntime, out: RGBTuple): void {
+  let y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+
+  if (runtime.whiteBalanceEnabled) {
+    const yBefore = y
+    r2020 *= runtime.wbR
+    g2020 *= runtime.wbG
+    b2020 *= runtime.wbB
+    const yAfter = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+    if (yAfter > 1e-6) {
+      const scale = yBefore / yAfter
+      r2020 *= scale
+      g2020 *= scale
+      b2020 *= scale
+    }
+    y = yBefore
+  }
+
+  if (runtime.sat !== 1.0) {
+    r2020 = y + (r2020 - y) * runtime.sat
+    g2020 = y + (g2020 - y) * runtime.sat
+    b2020 = y + (b2020 - y) * runtime.sat
+  }
+
+  if (runtime.vibranceDelta !== 0.0) {
+    const max = Math.max(r2020, g2020, b2020)
+    const min = Math.min(r2020, g2020, b2020)
+    const chroma = max - min
+    const saturationNorm = max > 1e-6 ? chroma / (max + 1e-6) : 0
+    const vibranceFactor = 1.0 + runtime.vibranceDelta * (1.0 - saturationNorm)
+    r2020 = y + (r2020 - y) * vibranceFactor
+    g2020 = y + (g2020 - y) * vibranceFactor
+    b2020 = y + (b2020 - y) * vibranceFactor
+  }
+
+  if (runtime.toneControlEnabled) {
+    y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+    const yMapped = applyToneControlsToLuma(
+      y,
+      runtime.scenePeak,
+      runtime.contrast,
+      runtime.shadowLift,
+      runtime.shadowLiftStrength,
+      runtime.blacks,
+      runtime.whites,
+      runtime.clarity,
+    )
+
+    if (y > 1e-6) {
+      const scale = yMapped / y
+      r2020 *= scale
+      g2020 *= scale
+      b2020 *= scale
+    } else if (yMapped > 0.0) {
+      r2020 = yMapped
+      g2020 = yMapped
+      b2020 = yMapped
+    }
+  }
+
+  if (runtime.shadowGlow > 0.0) {
+    y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+    const normalizedY = clamp(y / toneReferencePeak(runtime.scenePeak), 0.0, 1.0)
+    const glowWeight = (1.0 - normalizedY) * (1.0 - normalizedY)
+    const lift = runtime.shadowGlow * runtime.scenePeak * glowWeight
+    if (lift > 0.0) {
+      const yNew = y + lift
+      if (y > 1e-6) {
+        const scale = yNew / y
+        r2020 *= scale
+        g2020 *= scale
+        b2020 *= scale
+      } else {
+        r2020 = lift
+        g2020 = lift
+        b2020 = lift
+      }
+    }
+  }
+
+  y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+  if (runtime.highlightSaturation !== 1.0) {
+    const factor = highlightSaturationFactor(y, runtime.scenePeak, runtime.highlightSaturation)
+    r2020 = y + (r2020 - y) * factor
+    g2020 = y + (g2020 - y) * factor
+    b2020 = y + (b2020 - y) * factor
+  }
+
+  y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+  const highlightDesat = highlightDesaturationAmount(y, runtime.scenePeak)
+  if (highlightDesat > 0.0) {
+    const chromaScale = 1.0 - highlightDesat
+    r2020 = y + (r2020 - y) * chromaScale
+    g2020 = y + (g2020 - y) * chromaScale
+    b2020 = y + (b2020 - y) * chromaScale
+  }
+
+  y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+  if (y > 1.0) {
+    const yMapped = softShoulderLuma(y, runtime.shoulderKnee)
+    if (yMapped < y) {
+      const scale = yMapped / y
+      r2020 *= scale
+      g2020 *= scale
+      b2020 *= scale
+    }
+  }
+
+  out[0] = r2020
+  out[1] = g2020
+  out[2] = b2020
+}
+
+function decodeAndGradeBt2020Pixel(data: Uint8ClampedArray, sourceIndex: number, context: ProcessingContext, out: RGBTuple): void {
+  const r = context.lut[data[sourceIndex] ?? 0] ?? 0
+  const g = context.lut[data[sourceIndex + 1] ?? 0] ?? 0
+  const b = context.lut[data[sourceIndex + 2] ?? 0] ?? 0
+  const gain = context.gain * context.runtime.exposureGain
+
+  const r2020 = (SRGB_TO_BT2020[0] * r + SRGB_TO_BT2020[1] * g + SRGB_TO_BT2020[2] * b) * gain
+  const g2020 = (SRGB_TO_BT2020[3] * r + SRGB_TO_BT2020[4] * g + SRGB_TO_BT2020[5] * b) * gain
+  const b2020 = (SRGB_TO_BT2020[6] * r + SRGB_TO_BT2020[7] * g + SRGB_TO_BT2020[8] * b) * gain
+
+  gradeBt2020Pixel(r2020, g2020, b2020, context.runtime, out)
 }
 
 function quantizeGamma(gamma: number): number {
@@ -113,13 +382,7 @@ function previewToneMap(y: number): number {
 }
 
 function resolveLookControls(lookControlsOrGamma?: number | Partial<LookControls>): LookControls {
-  if (typeof lookControlsOrGamma === 'number') {
-    return normalizeLookControls({ gamma: lookControlsOrGamma })
-  }
-  if (lookControlsOrGamma) {
-    return normalizeLookControls(lookControlsOrGamma)
-  }
-  return DEFAULT_LOOK_CONTROLS
+  return normalizeLookControls(typeof lookControlsOrGamma === 'number' ? { gamma: lookControlsOrGamma } : lookControlsOrGamma)
 }
 
 export function setPQEncodeModeForTesting(mode: PQEncodeMode): void {
@@ -153,104 +416,17 @@ export function processPixels(
   const outLen = pixelCount * 3
   const out = outBuffer && outBuffer.length === outLen ? outBuffer : new Uint16Array(outLen)
 
-  const m = SRGB_TO_BT2020
-  const lut = getLinearizedGammaLUT(look.gamma)
-  const gain = boostToPQGain(boost)
-  const scenePeak = Math.min(gain, 1.0)
-  const baseShoulderKnee = clamp(scenePeak * SHOULDER_KNEE_RATIO, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
-  const shoulderKnee = clamp(baseShoulderKnee / look.highlightRollOff, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
-
-  const sat = look.saturation
-  const vibranceDelta = look.vibrance - 1.0
-  const contrast = look.contrast
-  const shadowLift = look.shadowLift
-  const shadowGlow = look.shadowGlow
+  const context = createProcessingContext(look, boostToPQGain(boost))
+  const graded: RGBTuple = [0, 0, 0]
 
   for (let i = 0; i < pixelCount; i++) {
     const si = i * 4
     const di = i * 3
 
-    const r = lut[data[si] ?? 0] ?? 0
-    const g = lut[data[si + 1] ?? 0] ?? 0
-    const b = lut[data[si + 2] ?? 0] ?? 0
-
-    let r2020 = (m[0] * r + m[1] * g + m[2] * b) * gain
-    let g2020 = (m[3] * r + m[4] * g + m[5] * b) * gain
-    let b2020 = (m[6] * r + m[7] * g + m[8] * b) * gain
-
-    let y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-
-    if (sat !== 1.0) {
-      r2020 = y + (r2020 - y) * sat
-      g2020 = y + (g2020 - y) * sat
-      b2020 = y + (b2020 - y) * sat
-    }
-
-    if (vibranceDelta !== 0.0) {
-      const max = Math.max(r2020, g2020, b2020)
-      const min = Math.min(r2020, g2020, b2020)
-      const chroma = max - min
-      const saturationNorm = max > 1e-6 ? chroma / (max + 1e-6) : 0
-      const vibranceFactor = 1.0 + vibranceDelta * (1.0 - saturationNorm)
-      r2020 = y + (r2020 - y) * vibranceFactor
-      g2020 = y + (g2020 - y) * vibranceFactor
-      b2020 = y + (b2020 - y) * vibranceFactor
-    }
-
-    if (contrast !== 1.0 || shadowLift > 0.0) {
-      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-      let yMapped = MID_GRAY_PIVOT + (y - MID_GRAY_PIVOT) * contrast
-      if (shadowLift > 0.0) {
-        const liftWeight = clamp(1.0 - yMapped, 0.0, 1.0)
-        yMapped += shadowLift * liftWeight * liftWeight
-      }
-
-      if (y > 1e-6) {
-        const scale = yMapped / y
-        r2020 *= scale
-        g2020 *= scale
-        b2020 *= scale
-      } else if (yMapped > 0.0) {
-        r2020 = yMapped
-        g2020 = yMapped
-        b2020 = yMapped
-      }
-    }
-
-    if (shadowGlow > 0.0) {
-      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-      const normalizedY = clamp(y / scenePeak, 0.0, 1.0)
-      const glowWeight = (1.0 - normalizedY) * (1.0 - normalizedY)
-      const lift = shadowGlow * scenePeak * glowWeight
-      if (lift > 0.0) {
-        const yNew = y + lift
-        if (y > 1e-6) {
-          const scale = yNew / y
-          r2020 *= scale
-          g2020 *= scale
-          b2020 *= scale
-        } else {
-          r2020 = lift
-          g2020 = lift
-          b2020 = lift
-        }
-      }
-    }
-
-    y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-    if (y > 1.0) {
-      const yMapped = softShoulderLuma(y, shoulderKnee)
-      if (yMapped < y) {
-        const scale = yMapped / y
-        r2020 *= scale
-        g2020 *= scale
-        b2020 *= scale
-      }
-    }
-
-    r2020 = clamp(r2020, 0.0, 1.0)
-    g2020 = clamp(g2020, 0.0, 1.0)
-    b2020 = clamp(b2020, 0.0, 1.0)
+    decodeAndGradeBt2020Pixel(data, si, context, graded)
+    const r2020 = clamp(graded[0], 0.0, 1.0)
+    const g2020 = clamp(graded[1], 0.0, 1.0)
+    const b2020 = clamp(graded[2], 0.0, 1.0)
 
     out[di] = Math.round(pqEncode(r2020) * 65535)
     out[di + 1] = Math.round(pqEncode(g2020) * 65535)
@@ -277,107 +453,20 @@ export function processPreviewPixels(
   const outLen = pixelCount * 4
   const out = outBuffer && outBuffer.length === outLen ? outBuffer : new Uint8ClampedArray(outLen)
 
-  const m = SRGB_TO_BT2020
   const inv = BT2020_TO_SRGB
-  const lut = getLinearizedGammaLUT(look.gamma)
-  const gain = SDR_TO_PQ_SCALE
-  const scenePeak = Math.min(gain, 1.0)
-  const baseShoulderKnee = clamp(scenePeak * SHOULDER_KNEE_RATIO, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
-  const shoulderKnee = clamp(baseShoulderKnee / look.highlightRollOff, SHOULDER_KNEE_MIN, SHOULDER_KNEE_MAX)
-
-  const sat = look.saturation
-  const vibranceDelta = look.vibrance - 1.0
-  const contrast = look.contrast
-  const shadowLift = look.shadowLift
-  const shadowGlow = look.shadowGlow
+  const context = createProcessingContext(look, SDR_TO_PQ_SCALE)
+  const graded: RGBTuple = [0, 0, 0]
 
   for (let i = 0; i < pixelCount; i++) {
     const si = i * 4
     const di = i * 4
 
-    const r = lut[data[si] ?? 0] ?? 0
-    const g = lut[data[si + 1] ?? 0] ?? 0
-    const b = lut[data[si + 2] ?? 0] ?? 0
-
-    let r2020 = (m[0] * r + m[1] * g + m[2] * b) * gain
-    let g2020 = (m[3] * r + m[4] * g + m[5] * b) * gain
-    let b2020 = (m[6] * r + m[7] * g + m[8] * b) * gain
+    decodeAndGradeBt2020Pixel(data, si, context, graded)
+    let r2020 = Math.max(0.0, graded[0])
+    let g2020 = Math.max(0.0, graded[1])
+    let b2020 = Math.max(0.0, graded[2])
 
     let y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-
-    if (sat !== 1.0) {
-      r2020 = y + (r2020 - y) * sat
-      g2020 = y + (g2020 - y) * sat
-      b2020 = y + (b2020 - y) * sat
-    }
-
-    if (vibranceDelta !== 0.0) {
-      const max = Math.max(r2020, g2020, b2020)
-      const min = Math.min(r2020, g2020, b2020)
-      const chroma = max - min
-      const saturationNorm = max > 1e-6 ? chroma / (max + 1e-6) : 0
-      const vibranceFactor = 1.0 + vibranceDelta * (1.0 - saturationNorm)
-      r2020 = y + (r2020 - y) * vibranceFactor
-      g2020 = y + (g2020 - y) * vibranceFactor
-      b2020 = y + (b2020 - y) * vibranceFactor
-    }
-
-    if (contrast !== 1.0 || shadowLift > 0.0) {
-      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-      let yMapped = MID_GRAY_PIVOT + (y - MID_GRAY_PIVOT) * contrast
-      if (shadowLift > 0.0) {
-        const liftWeight = clamp(1.0 - yMapped, 0.0, 1.0)
-        yMapped += shadowLift * liftWeight * liftWeight
-      }
-
-      if (y > 1e-6) {
-        const scale = yMapped / y
-        r2020 *= scale
-        g2020 *= scale
-        b2020 *= scale
-      } else if (yMapped > 0.0) {
-        r2020 = yMapped
-        g2020 = yMapped
-        b2020 = yMapped
-      }
-    }
-
-    if (shadowGlow > 0.0) {
-      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-      const normalizedY = clamp(y / scenePeak, 0.0, 1.0)
-      const glowWeight = (1.0 - normalizedY) * (1.0 - normalizedY)
-      const lift = shadowGlow * scenePeak * glowWeight
-      if (lift > 0.0) {
-        const yNew = y + lift
-        if (y > 1e-6) {
-          const scale = yNew / y
-          r2020 *= scale
-          g2020 *= scale
-          b2020 *= scale
-        } else {
-          r2020 = lift
-          g2020 = lift
-          b2020 = lift
-        }
-      }
-    }
-
-    y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
-    if (y > 1.0) {
-      const yMapped = softShoulderLuma(y, shoulderKnee)
-      if (yMapped < y) {
-        const scale = yMapped / y
-        r2020 *= scale
-        g2020 *= scale
-        b2020 *= scale
-      }
-    }
-
-    r2020 = Math.max(0.0, r2020)
-    g2020 = Math.max(0.0, g2020)
-    b2020 = Math.max(0.0, b2020)
-
-    y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
     if (y > 0.0) {
       const yMapped = previewToneMap(y)
       const scale = yMapped / y
