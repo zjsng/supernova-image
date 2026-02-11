@@ -13,6 +13,7 @@ describe('normalizeLookControls', () => {
       contrast: 99,
       highlightRollOff: -4,
       shadowLift: 9,
+      shadowGlow: 99,
       vibrance: -3,
     })
 
@@ -21,6 +22,7 @@ describe('normalizeLookControls', () => {
     expect(normalized.contrast).toBe(LOOK_CONTROL_RANGES.contrast.max)
     expect(normalized.highlightRollOff).toBe(LOOK_CONTROL_RANGES.highlightRollOff.min)
     expect(normalized.shadowLift).toBe(LOOK_CONTROL_RANGES.shadowLift.max)
+    expect(normalized.shadowGlow).toBe(LOOK_CONTROL_RANGES.shadowGlow.max)
     expect(normalized.vibrance).toBe(LOOK_CONTROL_RANGES.vibrance.min)
   })
 })

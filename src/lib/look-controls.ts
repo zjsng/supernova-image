@@ -4,6 +4,7 @@ export interface LookControls {
   contrast: number
   highlightRollOff: number
   shadowLift: number
+  shadowGlow: number
   vibrance: number
 }
 
@@ -19,6 +20,7 @@ export const LOOK_CONTROL_RANGES: Record<keyof LookControls, ControlRange> = {
   contrast: { min: 0.75, max: 1.35, step: 0.05 },
   highlightRollOff: { min: 0.7, max: 1.4, step: 0.05 },
   shadowLift: { min: 0.0, max: 0.25, step: 0.01 },
+  shadowGlow: { min: 0.0, max: 0.5, step: 0.02 },
   vibrance: { min: 1.0, max: 1.5, step: 0.05 },
 }
 
@@ -28,6 +30,7 @@ export const DEFAULT_LOOK_CONTROLS: LookControls = {
   contrast: 1.0,
   highlightRollOff: 1.0,
   shadowLift: 0.0,
+  shadowGlow: 0.0,
   vibrance: 1.0,
 }
 
@@ -46,6 +49,7 @@ export function normalizeLookControls(input?: Partial<LookControls>): LookContro
     contrast: clamp(merged.contrast, LOOK_CONTROL_RANGES.contrast.min, LOOK_CONTROL_RANGES.contrast.max),
     highlightRollOff: clamp(merged.highlightRollOff, LOOK_CONTROL_RANGES.highlightRollOff.min, LOOK_CONTROL_RANGES.highlightRollOff.max),
     shadowLift: clamp(merged.shadowLift, LOOK_CONTROL_RANGES.shadowLift.min, LOOK_CONTROL_RANGES.shadowLift.max),
+    shadowGlow: clamp(merged.shadowGlow, LOOK_CONTROL_RANGES.shadowGlow.min, LOOK_CONTROL_RANGES.shadowGlow.max),
     vibrance: clamp(merged.vibrance, LOOK_CONTROL_RANGES.vibrance.min, LOOK_CONTROL_RANGES.vibrance.max),
   }
 }
