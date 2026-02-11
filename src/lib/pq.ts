@@ -164,6 +164,7 @@ export function processPixels(
   const vibranceDelta = look.vibrance - 1.0
   const contrast = look.contrast
   const shadowLift = look.shadowLift
+  const shadowGlow = look.shadowGlow
 
   for (let i = 0; i < pixelCount; i++) {
     const si = i * 4
@@ -213,6 +214,26 @@ export function processPixels(
         r2020 = yMapped
         g2020 = yMapped
         b2020 = yMapped
+      }
+    }
+
+    if (shadowGlow > 0.0) {
+      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+      const normalizedY = clamp(y / scenePeak, 0.0, 1.0)
+      const glowWeight = (1.0 - normalizedY) * (1.0 - normalizedY)
+      const lift = shadowGlow * scenePeak * glowWeight
+      if (lift > 0.0) {
+        const yNew = y + lift
+        if (y > 1e-6) {
+          const scale = yNew / y
+          r2020 *= scale
+          g2020 *= scale
+          b2020 *= scale
+        } else {
+          r2020 = lift
+          g2020 = lift
+          b2020 = lift
+        }
       }
     }
 
@@ -268,6 +289,7 @@ export function processPreviewPixels(
   const vibranceDelta = look.vibrance - 1.0
   const contrast = look.contrast
   const shadowLift = look.shadowLift
+  const shadowGlow = look.shadowGlow
 
   for (let i = 0; i < pixelCount; i++) {
     const si = i * 4
@@ -317,6 +339,26 @@ export function processPreviewPixels(
         r2020 = yMapped
         g2020 = yMapped
         b2020 = yMapped
+      }
+    }
+
+    if (shadowGlow > 0.0) {
+      y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+      const normalizedY = clamp(y / scenePeak, 0.0, 1.0)
+      const glowWeight = (1.0 - normalizedY) * (1.0 - normalizedY)
+      const lift = shadowGlow * scenePeak * glowWeight
+      if (lift > 0.0) {
+        const yNew = y + lift
+        if (y > 1e-6) {
+          const scale = yNew / y
+          r2020 *= scale
+          g2020 *= scale
+          b2020 *= scale
+        } else {
+          r2020 = lift
+          g2020 = lift
+          b2020 = lift
+        }
       }
     }
 

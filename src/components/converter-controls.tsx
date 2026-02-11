@@ -143,6 +143,17 @@ export function ConverterControls({
           />
 
           <ControlGroup
+            id="shadow-glow-range"
+            label="Shadow Glow"
+            min={LOOK_CONTROL_RANGES.shadowGlow.min}
+            max={LOOK_CONTROL_RANGES.shadowGlow.max}
+            step={LOOK_CONTROL_RANGES.shadowGlow.step}
+            value={lookControls.shadowGlow}
+            onInput={(value) => onSetLookControl('shadowGlow', value)}
+            displayValue={lookControls.shadowGlow.toFixed(2)}
+          />
+
+          <ControlGroup
             id="vibrance-range"
             label="Vibrance"
             min={LOOK_CONTROL_RANGES.vibrance.min}

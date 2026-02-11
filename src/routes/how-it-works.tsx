@@ -242,7 +242,7 @@ export function HowItWorks() {
             <strong>Saturation</strong> — primary color intensity control shown in the main panel for quick edits.
           </li>
           <li>
-            <strong>Advanced</strong> — Gamma, Contrast, Highlight Roll-off, Shadow Lift, and Vibrance for finer grading.
+            <strong>Advanced</strong> — Gamma, Contrast, Highlight Roll-off, Shadow Lift, Shadow Glow, and Vibrance for finer grading.
           </li>
           <li>
             <strong>Preview behavior</strong> — preview is SDR approximation for speed; it does not display final HDR luminance boost

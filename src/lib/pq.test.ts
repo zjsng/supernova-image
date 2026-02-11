@@ -251,6 +251,7 @@ describe('preview processing path', () => {
       contrast: 1.35,
       highlightRollOff: 1.4,
       shadowLift: 0.25,
+      shadowGlow: 0.5,
       vibrance: 1.5,
     })
     for (const channel of out) {
@@ -295,6 +296,36 @@ describe('preview processing path', () => {
     const lowPeak = Math.max(lowRolloff[0], lowRolloff[1], lowRolloff[2])
     const highPeak = Math.max(highRolloff[0], highRolloff[1], highRolloff[2])
     expect(highPeak).toBeLessThanOrEqual(lowPeak)
+  })
+
+  it('shadow glow brightens dark pixels in preview', () => {
+    const sample = pixel(20, 20, 20)
+    const neutral = processPreviewPixels(sample, 1, DEFAULT_LOOK_CONTROLS)
+    const glowing = processPreviewPixels(sample, 1, { ...DEFAULT_LOOK_CONTROLS, shadowGlow: 0.5 })
+    expect(glowing[0]).toBeGreaterThan(neutral[0])
+    expect(glowing[1]).toBeGreaterThan(neutral[1])
+    expect(glowing[2]).toBeGreaterThan(neutral[2])
+  })
+
+  it('shadow glow affects dark pixels more than bright pixels', () => {
+    const dark = pixel(20, 20, 20)
+    const bright = pixel(220, 220, 220)
+    const darkNeutral = processPreviewPixels(dark, 1, DEFAULT_LOOK_CONTROLS)
+    const darkGlow = processPreviewPixels(dark, 1, { ...DEFAULT_LOOK_CONTROLS, shadowGlow: 0.4 })
+    const brightNeutral = processPreviewPixels(bright, 1, DEFAULT_LOOK_CONTROLS)
+    const brightGlow = processPreviewPixels(bright, 1, { ...DEFAULT_LOOK_CONTROLS, shadowGlow: 0.4 })
+    const darkDelta = darkGlow[1] - darkNeutral[1]
+    const brightDelta = brightGlow[1] - brightNeutral[1]
+    expect(darkDelta).toBeGreaterThan(brightDelta)
+  })
+
+  it('shadow glow brightens dark pixels in HDR export path', () => {
+    const sample = pixel(20, 20, 20)
+    const neutral = processPixels(sample, 5.0, DEFAULT_LOOK_CONTROLS)
+    const glowing = processPixels(sample, 5.0, { ...DEFAULT_LOOK_CONTROLS, shadowGlow: 0.5 })
+    expect(glowing[0]).toBeGreaterThan(neutral[0])
+    expect(glowing[1]).toBeGreaterThan(neutral[1])
+    expect(glowing[2]).toBeGreaterThan(neutral[2])
   })
 
   it('vibrance increases muted-color spread', () => {
