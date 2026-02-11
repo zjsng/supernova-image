@@ -26,6 +26,7 @@ Runtime flow:
 
 - `src/components/preview-pane.tsx`: upload/dropzone + before/after preview pane.
 - `src/components/converter-controls.tsx`: all sliders + conversion actions.
+- `src/components/app-error-boundary.tsx`: top-level error boundary.
 
 ### Worker orchestration
 
@@ -35,8 +36,10 @@ Runtime flow:
 
 ### Color and encoding core
 
+- `src/lib/look-controls.ts`: grading control types, ranges, defaults, and normalization.
 - `src/lib/pq.ts`: color transforms + PQ encode + SDR preview mapping.
 - `src/lib/hdr-boost.ts`: single-source boost/nits calibration constants.
+- `src/lib/icc-profile.ts`: ICC profile generation for HDR metadata.
 - `src/lib/encode-png.ts`: PNG assembly/chunking/compression.
 
 ### SEO/config SSOT
@@ -44,6 +47,8 @@ Runtime flow:
 - `src/lib/site-config.json`: site-wide metadata constants.
 - `src/lib/seo-routes.json`: route metadata source of truth.
 - `src/lib/seo-routes.ts`: typed accessors and runtime route maps.
+- `src/lib/seo-audit.ts`: SEO audit utilities.
+- `src/lib/use-head.ts`: document head management hook.
 
 ## Worker Protocol
 
@@ -67,7 +72,8 @@ Contract is defined in `src/lib/worker-protocol.ts` and validated at runtime in 
    - `dist/404.html`
    - `dist/sitemap.xml`
    - `dist/robots.txt`
-3. `scripts/seo-check.mjs` verifies metadata invariants and writes `dist/seo-audit.json`.
+3. `scripts/verify-pages-artifact.mjs` validates the final artifact structure.
+4. `scripts/seo-check.mjs` verifies metadata invariants and writes `dist/seo-audit.json`.
 
 ## Quality Gates
 
@@ -87,6 +93,10 @@ Performance tooling:
 - `bun run bench:compare`: enforce speed/size gates from benchmark report.
 - `bun run perf:pr`: PR-profile benchmark + strict comparison gate.
 - `.github/workflows/perf.yml`: scheduled/manual benchmark guard.
+
+## Deployment
+
+- `.github/workflows/deploy.yml`: GitHub Pages deployment workflow.
 
 ## E2E and CI Contracts
 
