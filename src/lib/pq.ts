@@ -466,7 +466,7 @@ export function processPreviewPixels(
     let g2020 = Math.max(0.0, graded[1])
     let b2020 = Math.max(0.0, graded[2])
 
-    let y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
+    const y = BT2020_LUMA[0] * r2020 + BT2020_LUMA[1] * g2020 + BT2020_LUMA[2] * b2020
     if (y > 0.0) {
       const yMapped = previewToneMap(y)
       const scale = yMapped / y
