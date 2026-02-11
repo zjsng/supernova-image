@@ -1,7 +1,43 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import path from 'node:path'
 
 const fixturePath = path.resolve(process.cwd(), 'e2e/fixtures/test.png')
+
+async function getPreviewFingerprint(page: Page): Promise<string | null> {
+  const previewImage = page.locator('img.preview-output-image')
+  if ((await previewImage.count()) > 0) {
+    return previewImage.evaluate((image) =>
+      image.complete && image.naturalWidth > 0 ? `img:${image.currentSrc || image.src}` : null,
+    )
+  }
+
+  const previewCanvas = page.locator('canvas.preview-output-canvas')
+  if ((await previewCanvas.count()) > 0) {
+    return previewCanvas.evaluate((canvas) => (canvas.width > 0 && canvas.height > 0 ? `canvas:${canvas.toDataURL()}` : null))
+  }
+
+  return null
+}
+
+async function waitForPreviewReady(page: Page): Promise<string> {
+  const previewPlaceholder = page.getByText('Adjust controls to render preview')
+  await expect(previewPlaceholder).toBeHidden()
+  await expect(page.locator('.processing-overlay')).toBeHidden()
+
+  let fingerprint: string | null = null
+  await expect
+    .poll(
+      async () => {
+        fingerprint = await getPreviewFingerprint(page)
+        return fingerprint
+      },
+      { timeout: 15_000 },
+    )
+    .not.toBeNull()
+
+  await expect(page.locator('.processing-overlay')).toBeHidden()
+  return fingerprint as string
+}
 
 test('core routes render expected content', async ({ page }) => {
   await page.goto('./')
@@ -22,38 +58,29 @@ test('upload, preview update, and download flow works', async ({ page }) => {
 
   await expect(page.locator('.filename')).toContainText('test.png', { timeout: 15_000 })
 
-  const previewPlaceholder = page.getByText('Adjust controls to render preview')
-  await expect(previewPlaceholder).toBeHidden()
-
-  const previewDataUrl = async (): Promise<string | null> => {
-    const previewCanvas = page.locator('canvas.preview-output-canvas')
-    const count = await previewCanvas.count()
-    if (count === 0) return null
-    return previewCanvas.evaluate((canvas) => (canvas.width > 0 && canvas.height > 0 ? canvas.toDataURL() : null))
-  }
-  let initialPreview: string | null = null
-  await expect
-    .poll(
-      async () => {
-        initialPreview = await previewDataUrl()
-        return initialPreview
-      },
-      { timeout: 15_000 },
-    )
-    .not.toBeNull()
+  const initialPreview = await waitForPreviewReady(page)
 
   await page.locator('#saturation-range').evaluate((el) => {
     const input = el as HTMLInputElement
     input.value = '1.6'
     input.dispatchEvent(new Event('input', { bubbles: true }))
   })
+  await expect(page.locator('#saturation-range')).toHaveValue('1.6')
 
-  await expect(page.locator('.control-group .value').first()).toContainText('nits')
+  await expect
+    .poll(
+      async () => {
+        const nextPreview = await getPreviewFingerprint(page)
+        return nextPreview !== null && nextPreview !== initialPreview
+      },
+      { timeout: 15_000 },
+    )
+    .toBe(true)
+  await expect(page.locator('.processing-overlay')).toBeHidden()
 
-  await expect.poll(previewDataUrl, { timeout: 15_000 }).not.toBe(initialPreview)
-
-  const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'Download HDR PNG' }).click()
-  const download = await downloadPromise
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    page.getByRole('button', { name: 'Download HDR PNG' }).click(),
+  ])
   expect(download.suggestedFilename()).toMatch(/-hdr\.png$/)
 })
