@@ -34,6 +34,8 @@
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.58.2",
     "@preact/preset-vite": "^2.10.3",
+    "@slidev/cli": "^52.12.0",
+    "@slidev/theme-seriph": "^0.25.0",
     "@types/node": "^25.2.1",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^10.0.0",
