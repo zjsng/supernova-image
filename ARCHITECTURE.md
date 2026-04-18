@@ -84,6 +84,7 @@ Contract is defined in `src/lib/worker-protocol.ts` and validated at runtime in 
    - `dist/sitemap.xml`
    - `dist/robots.txt`
    - `dist/.nojekyll` (explicit Pages/Jekyll opt-out)
+
 3. `scripts/seo-check.mjs` verifies metadata invariants and writes `dist/seo-audit.json`.
 
 ## Quality Gates
