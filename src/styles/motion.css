@@ -111,4 +111,35 @@
   .header__nav {
     gap: 14px;
   }
+
+  .header__tagline {
+    position: absolute !important;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+  }
+
+  .peak-readout {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .peak-readout__tags {
+    flex-wrap: wrap;
+    gap: 10px 14px;
+  }
+
+  .compare--split {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .preview-frame {
+    min-height: 520px;
+  }
 }
