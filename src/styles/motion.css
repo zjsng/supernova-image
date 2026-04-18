@@ -1,0 +1,114 @@
+/* Global keyframes + reduced-motion overrides + responsive breakpoints. */
+
+@keyframes scan {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes bloom-drift {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translate(-2%, 1%) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(2%, -1%) scale(1.02);
+    opacity: 0.85;
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 8px var(--accent);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 16px var(--accent);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .hdr-bloom,
+  .scan-bar,
+  .not-found__star::before {
+    animation: none !important;
+  }
+}
+
+@media (max-width: 880px) {
+  .header {
+    padding: 20px 24px 8px;
+  }
+
+  .prism-home__content {
+    padding: 0 24px 48px;
+  }
+
+  .preview-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .compat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .how-section--visual .how-split,
+  .how-section--visual .how-split--reverse {
+    grid-template-columns: 1fr;
+  }
+
+  .how-it-works {
+    padding: 16px 24px 64px;
+  }
+}
+
+@media (max-width: 560px) {
+  .chromatic-title {
+    font-size: clamp(36px, 11vw, 56px);
+  }
+
+  .hero__eyebrow {
+    font-size: 9px;
+    letter-spacing: 0.24em;
+  }
+
+  .compat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .nits-row {
+    grid-template-columns: 50px 1fr 110px;
+  }
+
+  .header__nav {
+    gap: 14px;
+  }
+}

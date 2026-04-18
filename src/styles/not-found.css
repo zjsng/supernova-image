@@ -1,0 +1,100 @@
+/* 404 page: pulsing photon + headline + back button. */
+
+.not-found {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 64px 40px;
+  background: radial-gradient(ellipse 70% 50% at 50% 40%, var(--accent-dim), transparent 70%);
+  gap: 22px;
+}
+
+.not-found__star {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin-bottom: 8px;
+}
+
+.not-found__star::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent), transparent 65%);
+  animation: pulse-dot 2.8s ease-in-out infinite;
+}
+
+.not-found__star::after {
+  content: '';
+  position: absolute;
+  inset: 30px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow:
+    0 0 40px var(--accent),
+    0 0 80px var(--accent-dim);
+}
+
+.not-found__eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.not-found h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(38px, 5vw, 64px);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.not-found p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 420px;
+}
+
+.not-found__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px 24px;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  color: #0a0a0a;
+  background: var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 0 30px var(--accent-dim);
+  transition: filter var(--transition-base);
+}
+
+.not-found__link:hover {
+  filter: brightness(1.05);
+}
+
+.not-found__link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.not-found__trace {
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}

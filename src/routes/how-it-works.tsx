@@ -205,6 +205,7 @@ export function HowItWorks() {
       </a>
 
       <section class="how-hero">
+        <span class="section-eyebrow">✦ § 00 — Overview</span>
         <h1>How HDR PNG Conversion Works</h1>
         <p>
           Supernova converts standard images into HDR PNGs that glow on HDR displays. On compatible browsers/displays, preview shows the
@@ -213,6 +214,7 @@ export function HowItWorks() {
       </section>
 
       <RevealSection className="how-section how-section--flush">
+        <span class="section-eyebrow">§ 01 — The pipeline</span>
         <h2>The Pipeline</h2>
         <PipelineFlow />
         <div class="pipeline-steps">
@@ -234,6 +236,7 @@ export function HowItWorks() {
       </RevealSection>
 
       <RevealSection className="how-section">
+        <span class="section-eyebrow">§ 02 — Controls</span>
         <h2>The Controls</h2>
         <ul class="how-meta-list">
           <li>
@@ -256,6 +259,7 @@ export function HowItWorks() {
       <RevealSection className="how-section how-section--visual">
         <div class="how-split">
           <div class="how-split__text">
+            <span class="section-eyebrow">§ 03 — Transfer</span>
             <h2>What is PQ?</h2>
             <p>
               PQ (Perceptual Quantizer) is the transfer function behind HDR10 and Dolby Vision. Unlike gamma (~2.2) which tops out at 100
@@ -276,6 +280,7 @@ export function HowItWorks() {
       <RevealSection className="how-section how-section--visual">
         <div class="how-split how-split--reverse">
           <div class="how-split__text">
+            <span class="section-eyebrow">§ 04 — Metadata</span>
             <h2>The Metadata</h2>
             <p>A valid HDR PNG needs metadata so the display knows how to interpret the pixels:</p>
             <ul class="how-meta-list">
@@ -297,17 +302,20 @@ export function HowItWorks() {
       </RevealSection>
 
       <RevealSection className="how-section">
+        <span class="section-eyebrow">§ 05 — Support</span>
         <h2>Compatibility</h2>
         <p>Requires an HDR display and a supported browser. On SDR displays, the image renders as a normal PNG.</p>
         <BrowserCompat />
       </RevealSection>
 
       <RevealSection className="how-section">
+        <span class="section-eyebrow">§ 06 — Privacy</span>
         <h2>Privacy</h2>
         <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
       </RevealSection>
 
       <RevealSection className="how-section">
+        <span class="section-eyebrow">§ 07 — Guides</span>
         <h2>Related Guides</h2>
         <ul class="how-meta-list">
           {GUIDE_SEO_ROUTES.map((route) => (

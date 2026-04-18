@@ -5,6 +5,7 @@ import { BOOST_UI_MIN } from '../lib/hdr-boost'
 import { getWorkerErrorCode, getWorkerErrorMessage, useConverterWorker } from '../hooks/use-converter-worker'
 import { ConverterControls } from '../components/converter-controls'
 import { PreviewPane } from '../components/preview-pane'
+import { PlasmaField } from '../components/plasma-field'
 import { SEO_BASE_URL } from '../lib/seo-routes'
 import { GuideLinksInline, HOME_ROUTE, RouteJsonLd, useSeoRouteHead } from './shared'
 
@@ -411,119 +412,110 @@ export function Home() {
     shouldTryWorkerDecode,
   ])
 
+  const previewPane = (
+    <PreviewPane
+      image={image}
+      dragover={dragover}
+      previewReady={previewReady}
+      previewImageSrc={previewImageSrc}
+      processing={processing}
+      previewPending={previewPending}
+      fileInputRef={fileInputRef}
+      previewCanvasRef={previewCanvasRef}
+      decodeCanvasRef={decodeCanvasRef}
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onBrowse={handleBrowse}
+      onFileSelect={handleFileSelect}
+      imageName={image?.name}
+      imageWidth={image?.width}
+      imageHeight={image?.height}
+      boost={boost}
+      exposure={lookControls.exposure}
+    />
+  )
+
   return (
-    <>
-      <PreviewPane
-        image={image}
-        dragover={dragover}
-        previewReady={previewReady}
-        previewImageSrc={previewImageSrc}
-        processing={processing}
-        previewPending={previewPending}
-        fileInputRef={fileInputRef}
-        previewCanvasRef={previewCanvasRef}
-        decodeCanvasRef={decodeCanvasRef}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onBrowse={handleBrowse}
-        onFileSelect={handleFileSelect}
-      />
+    <div
+      class="prism-home"
+      onDragOver={!image ? handleDragOver : undefined}
+      onDragLeave={!image ? handleDragLeave : undefined}
+      onDrop={!image ? handleDrop : undefined}
+    >
+      <PlasmaField />
+      <div class="grain-overlay" aria-hidden="true" />
 
-      {image && (
-        <ConverterControls
-          imageName={image.name}
-          imageWidth={image.width}
-          imageHeight={image.height}
-          boost={boost}
-          lookControls={lookControls}
-          processing={processing}
-          downloaded={downloaded}
-          hdrPreviewEnabled={hdrPreviewEnabled}
-          onSetBoost={setBoost}
-          onSetLookControl={setLookControl}
-          onReset={reset}
-          onConvert={convert}
+      <div class="prism-home__content">
+        {image ? (
+          <div class="preview-layout">
+            {previewPane}
+            <ConverterControls
+              imageName={image.name}
+              imageWidth={image.width}
+              imageHeight={image.height}
+              boost={boost}
+              lookControls={lookControls}
+              processing={processing}
+              downloaded={downloaded}
+              hdrPreviewEnabled={hdrPreviewEnabled}
+              onSetBoost={setBoost}
+              onSetLookControl={setLookControl}
+              onReset={reset}
+              onConvert={convert}
+            />
+          </div>
+        ) : (
+          <section class="hero">{previewPane}</section>
+        )}
+
+        {errorMessage && (
+          <div class="error-banner" role="status">
+            {errorMessage}
+          </div>
+        )}
+
+        <footer class="privacy-ribbon">
+          <div class="privacy-ribbon__left">
+            <span class="privacy-ribbon__title">Supernova · client-side HDR PNG</span>
+            <span class="privacy-ribbon__tagline">No uploads · no telemetry · no cookies</span>
+          </div>
+          <nav class="privacy-ribbon__guides" aria-label="Popular guides">
+            <span class="privacy-ribbon__guides-label">Guides</span>
+            <GuideLinksInline />
+          </nav>
+        </footer>
+
+        <RouteJsonLd
+          data={{
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'WebApplication',
+                name: 'Supernova',
+                description: 'Convert any image to HDR PNG in your browser',
+                url: `${SEO_BASE_URL}/`,
+                mainEntityOfPage: `${SEO_BASE_URL}/`,
+                applicationCategory: 'MultimediaApplication',
+                operatingSystem: 'Any',
+                browserRequirements: 'Modern browser with HDR display recommended',
+                offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+              },
+              {
+                '@type': 'WebSite',
+                name: 'Supernova',
+                url: `${SEO_BASE_URL}/`,
+              },
+              {
+                '@type': 'Organization',
+                name: 'Supernova',
+                url: `${SEO_BASE_URL}/`,
+                logo: `${SEO_BASE_URL}/og-image.png`,
+              },
+            ],
+          }}
         />
-      )}
-
-      {errorMessage && (
-        <div class="error-banner" role="status">
-          {errorMessage}
-        </div>
-      )}
-
-      <section class="seo-copy" aria-labelledby="converter-overview-title">
-        <h2 id="converter-overview-title">Convert Images To HDR PNG With PQ (ST 2084)</h2>
-        <p>
-          Supernova is a browser-based HDR PNG converter built for fast local conversion. Drop a PNG, JPEG, WebP, or AVIF image and export
-          an HDR PNG without uploading anything.
-        </p>
-        <p>
-          The output includes PQ transfer and Rec.2020 metadata (cICP, cHRM, iCCP) so highlights can render with extended brightness on
-          supported HDR displays and browsers.
-        </p>
-        <p>
-          Popular guides: <GuideLinksInline />
-        </p>
-      </section>
-
-      <RouteJsonLd
-        data={{
-          '@context': 'https://schema.org',
-          '@graph': [
-            {
-              '@type': 'WebApplication',
-              name: 'Supernova',
-              description: 'Convert any image to HDR PNG in your browser',
-              url: `${SEO_BASE_URL}/`,
-              mainEntityOfPage: `${SEO_BASE_URL}/`,
-              applicationCategory: 'MultimediaApplication',
-              operatingSystem: 'Any',
-              browserRequirements: 'Modern browser with HDR display recommended',
-              offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
-            },
-            {
-              '@type': 'WebSite',
-              name: 'Supernova',
-              url: `${SEO_BASE_URL}/`,
-            },
-            {
-              '@type': 'Organization',
-              name: 'Supernova',
-              url: `${SEO_BASE_URL}/`,
-              logo: `${SEO_BASE_URL}/og-image.png`,
-            },
-          ],
-        }}
-      />
-
-      <footer class="trust-badge">
-        <span class="trust-badge__item">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 2l7 4v5c0 5.25-3.5 9.74-7 11-3.5-1.26-7-5.75-7-11V6l7-4z" />
-          </svg>
-          100% client-side
-        </span>
-        <span class="trust-badge__divider" aria-hidden="true" />
-        <span class="trust-badge__item">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <path d="M7 10l5-5 5 5" />
-            <path d="M12 5v10" />
-            <line x1="4" y1="4" x2="20" y2="20" stroke-width="2" />
-          </svg>
-          No uploads
-        </span>
-        <span class="trust-badge__divider" aria-hidden="true" />
-        <span class="trust-badge__item">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-            <path d="M7 11V7a5 5 0 0110 0v4" />
-          </svg>
-          Images never leave your device
-        </span>
-      </footer>
-    </>
+      </div>
+    </div>
   )
 }

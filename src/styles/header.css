@@ -1,0 +1,87 @@
+/* Header: brand lockup + nav. */
+
+.header {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 48px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.header__lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.header__tagline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.header__tagline-sep {
+  color: var(--ink-4);
+}
+
+.header__brand-mark {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.header__brand-mark .dot {
+  filter: drop-shadow(0 0 4px var(--accent));
+}
+
+.header__nav {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  white-space: nowrap;
+}
+
+.header__nav-link {
+  color: var(--ink-3);
+  transition: color var(--transition-base);
+}
+
+.header__nav-link:hover {
+  color: var(--ink);
+}
+
+.header__nav-link--accent {
+  color: var(--accent);
+}
+
+.how-link {
+  color: var(--accent);
+  transition: opacity var(--transition-base);
+}
+
+.how-link:hover {
+  opacity: 0.7;
+}
