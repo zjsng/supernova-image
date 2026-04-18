@@ -40,6 +40,8 @@ export function PlasmaField() {
     let height = 0
     let raf = 0
     let stopped = false
+    let intersecting = true
+    let running = false
 
     const resize = () => {
       const rect = wrapper.getBoundingClientRect()
@@ -65,13 +67,33 @@ export function PlasmaField() {
       mouse.active = 0
     }
 
-    const onVisibility = () => {
-      if (document.visibilityState === 'hidden') {
-        cancelAnimationFrame(raf)
-      } else if (!stopped && !reduceMotion) {
-        raf = requestAnimationFrame(draw)
-      }
+    const shouldRun = () => !stopped && !reduceMotion && intersecting && document.visibilityState !== 'hidden'
+
+    const wake = () => {
+      if (running || !shouldRun()) return
+      running = true
+      raf = requestAnimationFrame(draw)
     }
+
+    const sleep = () => {
+      running = false
+      cancelAnimationFrame(raf)
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') sleep()
+      else wake()
+    }
+
+    const intersectionObserver = new IntersectionObserver(
+      (entries) => {
+        intersecting = entries[0]?.isIntersecting ?? true
+        if (intersecting) wake()
+        else sleep()
+      },
+      { rootMargin: '0px' },
+    )
+    intersectionObserver.observe(wrapper)
 
     window.addEventListener('mousemove', onMove)
     window.addEventListener('mouseleave', onLeave)
@@ -130,17 +152,20 @@ export function PlasmaField() {
       context.fillStyle = vignette
       context.fillRect(0, 0, width, height)
 
-      if (!reduceMotion && !stopped) {
+      if (shouldRun()) {
         raf = requestAnimationFrame(draw)
+      } else {
+        running = false
       }
     }
 
-    raf = requestAnimationFrame(draw)
+    wake()
 
     return () => {
       stopped = true
       cancelAnimationFrame(raf)
       resizeObserver.disconnect()
+      intersectionObserver.disconnect()
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mouseleave', onLeave)
       document.removeEventListener('visibilitychange', onVisibility)

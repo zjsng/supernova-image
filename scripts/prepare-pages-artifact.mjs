@@ -9,6 +9,7 @@ const ROUTE_404_INDEX_HTML = path.join(DIST_DIR, '404', 'index.html')
 const NOT_FOUND_HTML = path.join(DIST_DIR, '404.html')
 const SITEMAP_XML = path.join(DIST_DIR, 'sitemap.xml')
 const ROBOTS_TXT = path.join(DIST_DIR, 'robots.txt')
+const ASSETS_DIR = path.join(DIST_DIR, 'assets')
 
 async function exists(filePath) {
   try {
@@ -115,6 +116,45 @@ async function writeSitemapFromSeoRoutes(baseUrl, routes) {
   )
 }
 
+async function findWorkerChunk() {
+  if (!(await exists(ASSETS_DIR))) return null
+  const entries = await readdir(ASSETS_DIR)
+  return entries.find((name) => /^worker-.*\.js$/.test(name)) ?? null
+}
+
+async function collectHtmlFiles(dir) {
+  const out = []
+  const walk = async (current) => {
+    const entries = await readdir(current, { withFileTypes: true })
+    for (const entry of entries) {
+      const full = path.join(current, entry.name)
+      if (entry.isDirectory()) await walk(full)
+      else if (entry.name.endsWith('.html')) out.push(full)
+    }
+  }
+  await walk(dir)
+  return out
+}
+
+async function injectWorkerModulePreload(workerChunk) {
+  const htmlFiles = await collectHtmlFiles(DIST_DIR)
+  let injected = 0
+  for (const file of htmlFiles) {
+    const html = await readFile(file, 'utf-8')
+    const scriptMatch = html.match(/<script type="module"[^>]*src="([^"]*\/assets\/)main-[^"]+"/)
+    if (!scriptMatch) continue
+    const assetPrefix = scriptMatch[1]
+    const preloadHref = `${assetPrefix}${workerChunk}`
+    if (html.includes(`href="${preloadHref}"`)) continue
+    const preloadTag = `<link rel="modulepreload" crossorigin href="${preloadHref}">`
+    const patched = html.replace(/<\/head>/, `    ${preloadTag}\n  </head>`)
+    if (patched === html) continue
+    await writeFile(file, patched)
+    injected++
+  }
+  console.log(`[prepare-pages-artifact] Injected worker modulepreload into ${injected} HTML file(s).`)
+}
+
 async function writeRobotsTxt(baseUrl) {
   const body = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`
   await writeFile(ROBOTS_TXT, body, 'utf8')
@@ -129,6 +169,9 @@ async function main() {
   const { baseUrl, routes } = await readSeoRoutesConfig()
   const notFoundRoute = getNotFoundRoute(routes)
   await copyNestedBuildOutput()
+  const workerChunk = await findWorkerChunk()
+  if (workerChunk) await injectWorkerModulePreload(workerChunk)
+  else console.log('[prepare-pages-artifact] No worker chunk found in dist/assets; skipping modulepreload injection.')
   await ensureNotFoundPage(baseUrl, notFoundRoute)
   await writeSitemapFromSeoRoutes(baseUrl, routes)
   await writeRobotsTxt(baseUrl)

@@ -50,6 +50,7 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
   const [showAfter, setShowAfter] = useState(true)
   const wrapRef = useRef<HTMLDivElement>(null)
   const draggingRef = useRef(false)
+  const startDragRef = useRef<(() => void) | null>(null)
 
   const handleDrag = useCallback((event: MouseEvent | TouchEvent) => {
     if (!draggingRef.current || !wrapRef.current) return
@@ -62,19 +63,23 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
   useEffect(() => {
     if (mode !== 'drag') return
 
-    const stop = () => {
+    const passive: AddEventListenerOptions = { passive: true }
+    const detach = () => {
       draggingRef.current = false
+      window.removeEventListener('mousemove', handleDrag, passive)
+      window.removeEventListener('touchmove', handleDrag, passive)
+      window.removeEventListener('mouseup', detach)
+      window.removeEventListener('touchend', detach)
     }
-    window.addEventListener('mouseup', stop)
-    window.addEventListener('touchend', stop)
-    window.addEventListener('mousemove', handleDrag)
-    window.addEventListener('touchmove', handleDrag)
-    return () => {
-      window.removeEventListener('mouseup', stop)
-      window.removeEventListener('touchend', stop)
-      window.removeEventListener('mousemove', handleDrag)
-      window.removeEventListener('touchmove', handleDrag)
+    const start = () => {
+      window.addEventListener('mousemove', handleDrag, passive)
+      window.addEventListener('touchmove', handleDrag, passive)
+      window.addEventListener('mouseup', detach)
+      window.addEventListener('touchend', detach)
     }
+    startDragRef.current = start
+
+    return detach
   }, [handleDrag, mode])
 
   if (mode === 'split') {
@@ -137,10 +142,12 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
       class="compare compare--drag"
       onMouseDown={(event) => {
         draggingRef.current = true
+        startDragRef.current?.()
         handleDrag(event)
       }}
       onTouchStart={(event) => {
         draggingRef.current = true
+        startDragRef.current?.()
         handleDrag(event)
       }}
     >

@@ -24,8 +24,9 @@
     "site:verify": "node scripts/verify-site-config-sync.mjs"
   },
   "dependencies": {
-    "@fontsource/outfit": "^5.2.8",
-    "@fontsource/unbounded": "^5.2.8",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
+    "@fontsource/space-grotesk": "^5.2.8",
     "fflate": "^0.8.2",
     "preact": "^10.28.3",
     "preact-iso": "^2.11.1"
