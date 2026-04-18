@@ -44,8 +44,15 @@ const PQ_LUT_SCALE = PQ_LUT_SIZE
 const gammaLUTCache = new Map<number, Float32Array>()
 const pqLUT = new Float32Array(PQ_LUT_SIZE + 1)
 
+// LUT settings for the fast sRGB OETF (preview path only — 8-bit output).
+const SRGB_OETF_LUT_SIZE = 4096
+const SRGB_OETF_LUT_SCALE = SRGB_OETF_LUT_SIZE
+const srgbOETFLUT = new Float32Array(SRGB_OETF_LUT_SIZE + 1)
+
 type PQEncodeMode = 'lut' | 'exact'
 let pqEncodeMode: PQEncodeMode = 'lut'
+type SRGBEncodeMode = 'lut' | 'exact'
+let srgbEncodeMode: SRGBEncodeMode = 'lut'
 type RGBTuple = [number, number, number]
 
 interface LookRuntime {
@@ -372,6 +379,25 @@ function srgbOETF(linear: number): number {
   return 1.055 * Math.pow(linear, 1 / 2.4) - 0.055
 }
 
+for (let i = 0; i <= SRGB_OETF_LUT_SIZE; i++) {
+  srgbOETFLUT[i] = srgbOETF(i / SRGB_OETF_LUT_SCALE)
+}
+
+function srgbOETFFast(linear: number): number {
+  if (linear <= 0) return 0
+  if (linear >= 1) return 1
+  const x = linear * SRGB_OETF_LUT_SCALE
+  const i = x | 0
+  const t = x - i
+  const a = srgbOETFLUT[i] ?? 0
+  const b = srgbOETFLUT[i + 1] ?? 1
+  return a + (b - a) * t
+}
+
+function srgbEncode(linear: number): number {
+  return srgbEncodeMode === 'exact' ? srgbOETF(linear) : srgbOETFFast(linear)
+}
+
 function previewToneMap(y: number): number {
   // Convert PQ-normalized luminance back to SDR-relative scale so 100-nit
   // diffuse white (0.01 in PQ domain) previews close to white.
@@ -389,9 +415,18 @@ export function setPQEncodeModeForTesting(mode: PQEncodeMode): void {
   pqEncodeMode = mode
 }
 
+export function setSRGBEncodeModeForTesting(mode: SRGBEncodeMode): void {
+  srgbEncodeMode = mode
+}
+
 export function pqEncodeDebug(L: number): { exact: number; lut: number } {
   const clamped = clamp(L, 0.0, 1.0)
   return { exact: pqOETF(clamped), lut: pqOETFFast(clamped) }
+}
+
+export function srgbEncodeDebug(L: number): { exact: number; lut: number } {
+  const clamped = clamp(L, 0.0, 1.0)
+  return { exact: srgbOETF(clamped), lut: srgbOETFFast(clamped) }
 }
 
 export function srgbEOTF(v: number): number {
@@ -483,9 +518,9 @@ export function processPreviewPixels(
     gs = clamp(gs, 0.0, 1.0)
     bs = clamp(bs, 0.0, 1.0)
 
-    out[di] = Math.round(clamp(srgbOETF(rs), 0.0, 1.0) * 255)
-    out[di + 1] = Math.round(clamp(srgbOETF(gs), 0.0, 1.0) * 255)
-    out[di + 2] = Math.round(clamp(srgbOETF(bs), 0.0, 1.0) * 255)
+    out[di] = Math.round(srgbEncode(rs) * 255)
+    out[di + 1] = Math.round(srgbEncode(gs) * 255)
+    out[di + 2] = Math.round(srgbEncode(bs) * 255)
     out[di + 3] = 255
   }
 

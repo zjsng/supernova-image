@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest'
-import { pqEncodeDebug, processPreviewPixels, processPixels, setPQEncodeModeForTesting, srgbEOTF, SRGB_TO_BT2020 } from './pq'
+import {
+  pqEncodeDebug,
+  processPreviewPixels,
+  processPixels,
+  setPQEncodeModeForTesting,
+  setSRGBEncodeModeForTesting,
+  srgbEncodeDebug,
+  srgbEOTF,
+  SRGB_TO_BT2020,
+} from './pq'
 import { boostToPQGain } from './hdr-boost'
 import { DEFAULT_LOOK_CONTROLS } from './look-controls'
 
@@ -217,6 +226,32 @@ describe('PQ LUT fast path', () => {
       const expected = Math.round(pqEncodeDebug(boostToPQGain(boost)).exact * 65535)
       const result = processPixels(pixel(255, 255, 255), boost)
       expect(Math.abs(result[0] - expected)).toBeLessThanOrEqual(2)
+    }
+  })
+})
+
+describe('sRGB OETF LUT fast path', () => {
+  it('keeps LUT interpolation within 1 uint8 code value across the domain', () => {
+    for (let i = 0; i <= 2000; i++) {
+      const L = i / 2000
+      const { exact, lut } = srgbEncodeDebug(L)
+      const exactCode = Math.round(exact * 255)
+      const lutCode = Math.round(lut * 255)
+      expect(Math.abs(lutCode - exactCode)).toBeLessThanOrEqual(1)
+    }
+  })
+
+  it('matches exact-mode preview output within 1 uint8 code value', () => {
+    const samples = [pixel(0, 0, 0), pixel(32, 64, 128), pixel(213, 156, 44), pixel(255, 255, 255)]
+    for (const sample of samples) {
+      setSRGBEncodeModeForTesting('exact')
+      const exact = processPreviewPixels(sample, 1.0, DEFAULT_LOOK_CONTROLS)
+      setSRGBEncodeModeForTesting('lut')
+      const fast = processPreviewPixels(sample, 1.0, DEFAULT_LOOK_CONTROLS)
+
+      for (let i = 0; i < exact.length; i++) {
+        expect(Math.abs(fast[i] - exact[i])).toBeLessThanOrEqual(1)
+      }
     }
   })
 })
