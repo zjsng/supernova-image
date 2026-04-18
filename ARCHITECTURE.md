@@ -15,12 +15,12 @@ Runtime flow:
 
 ### App composition
 
-- `src/app.tsx`: route composition + header only.
+- `src/app.tsx`: route composition + header only. The `<Router>` sits inside a `<main>` landmark wrapped by preact-iso's `ErrorBoundary`, itself nested under the top-level `AppErrorBoundary`.
 - `src/components/app-error-boundary.tsx`: top-level error boundary wrapping the router.
-- `src/routes/home.tsx`: converter page orchestration.
-- `src/routes/how-it-works.tsx`: technical explanation page.
-- `src/routes/guides.tsx`: SEO guide pages.
-- `src/routes/not-found.tsx`: 404 route.
+- `src/routes/home.tsx`: converter page orchestration (eagerly imported).
+- `src/routes/how-it-works.tsx`: technical explanation page (lazy-loaded via `preact-iso` `lazy()`).
+- `src/routes/guides.tsx`: SEO guide pages (lazy-loaded).
+- `src/routes/not-found.tsx`: 404 route (lazy-loaded).
 - `src/routes/shared.tsx`: shared route helpers and reusable route UI blocks.
 
 ### UI components
@@ -74,10 +74,16 @@ Contract is defined in `src/lib/worker-protocol.ts` and validated at runtime in 
 ## Build and Artifact Flow
 
 1. `vite build` prerenders routes.
-2. `scripts/prepare-pages-artifact.mjs` flattens Pages output, injects `<link rel="modulepreload">` for the hashed worker chunk into each prerendered HTML, and generates:
+2. `scripts/prepare-pages-artifact.mjs` flattens Pages output, injects into each prerendered HTML:
+   - `<link rel="modulepreload">` for the hashed worker chunk
+   - `<link rel="preload" as="font" type="font/woff2" crossorigin>` for hero fonts (Space Grotesk 500/600, Inter 400)
+   - `<link rel="prefetch">` for lazy route chunks (`how-it-works`, `guides`, `not-found`)
+
+   and generates:
    - `dist/404.html`
    - `dist/sitemap.xml`
    - `dist/robots.txt`
+   - `dist/.nojekyll` (explicit Pages/Jekyll opt-out)
 3. `scripts/seo-check.mjs` verifies metadata invariants and writes `dist/seo-audit.json`.
 
 ## Quality Gates
