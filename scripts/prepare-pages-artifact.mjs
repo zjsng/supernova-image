@@ -122,6 +122,23 @@ async function findWorkerChunk() {
   return entries.find((name) => /^worker-.*\.js$/.test(name)) ?? null
 }
 
+const HERO_FONT_PATTERNS = [
+  /^space-grotesk-latin-500-normal-.*\.woff2$/,
+  /^space-grotesk-latin-600-normal-.*\.woff2$/,
+  /^inter-latin-400-normal-.*\.woff2$/,
+]
+
+async function findHeroFontFiles() {
+  if (!(await exists(ASSETS_DIR))) return []
+  const entries = await readdir(ASSETS_DIR)
+  const matched = []
+  for (const pattern of HERO_FONT_PATTERNS) {
+    const file = entries.find((name) => pattern.test(name))
+    if (file) matched.push(file)
+  }
+  return matched
+}
+
 async function collectHtmlFiles(dir) {
   const out = []
   const walk = async (current) => {
@@ -155,6 +172,30 @@ async function injectWorkerModulePreload(workerChunk) {
   console.log(`[prepare-pages-artifact] Injected worker modulepreload into ${injected} HTML file(s).`)
 }
 
+async function injectHeroFontPreloads(fontFiles) {
+  const htmlFiles = await collectHtmlFiles(DIST_DIR)
+  let injected = 0
+  for (const file of htmlFiles) {
+    const html = await readFile(file, 'utf-8')
+    const scriptMatch = html.match(/<script type="module"[^>]*src="([^"]*\/assets\/)main-[^"]+"/)
+    if (!scriptMatch) continue
+    const assetPrefix = scriptMatch[1]
+    const tags = []
+    for (const font of fontFiles) {
+      const href = `${assetPrefix}${font}`
+      if (html.includes(`href="${href}"`)) continue
+      tags.push(`<link rel="preload" as="font" type="font/woff2" crossorigin href="${href}">`)
+    }
+    if (tags.length === 0) continue
+    const block = tags.map((tag) => `    ${tag}`).join('\n')
+    const patched = html.replace(/<\/head>/, `${block}\n  </head>`)
+    if (patched === html) continue
+    await writeFile(file, patched)
+    injected++
+  }
+  console.log(`[prepare-pages-artifact] Injected ${fontFiles.length} hero font preload(s) into ${injected} HTML file(s).`)
+}
+
 async function writeRobotsTxt(baseUrl) {
   const body = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`
   await writeFile(ROBOTS_TXT, body, 'utf8')
@@ -172,6 +213,9 @@ async function main() {
   const workerChunk = await findWorkerChunk()
   if (workerChunk) await injectWorkerModulePreload(workerChunk)
   else console.log('[prepare-pages-artifact] No worker chunk found in dist/assets; skipping modulepreload injection.')
+  const heroFontFiles = await findHeroFontFiles()
+  if (heroFontFiles.length > 0) await injectHeroFontPreloads(heroFontFiles)
+  else console.log('[prepare-pages-artifact] No hero font files found in dist/assets; skipping font preload injection.')
   await ensureNotFoundPage(baseUrl, notFoundRoute)
   await writeSitemapFromSeoRoutes(baseUrl, routes)
   await writeRobotsTxt(baseUrl)

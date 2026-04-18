@@ -98,7 +98,3 @@ export function GuideRoutePage({ routeId }: { routeId: string }) {
     </div>
   )
 }
-
-export const GUIDE_ROUTE_COMPONENT_BY_ID = new Map(
-  GUIDE_SEO_ROUTES.map((route) => [route.id, () => <GuideRoutePage routeId={route.id} />] as const),
-)
