@@ -16,6 +16,7 @@ Runtime flow:
 ### App composition
 
 - `src/app.tsx`: route composition + header only.
+- `src/components/app-error-boundary.tsx`: top-level error boundary wrapping the router.
 - `src/routes/home.tsx`: converter page orchestration.
 - `src/routes/how-it-works.tsx`: technical explanation page.
 - `src/routes/guides.tsx`: SEO guide pages.
@@ -24,8 +25,16 @@ Runtime flow:
 
 ### UI components
 
-- `src/components/preview-pane.tsx`: upload/dropzone + before/after preview pane.
-- `src/components/converter-controls.tsx`: all sliders + conversion actions.
+- `src/components/preview-pane.tsx`: upload/dropzone + before/after preview shell, hosts the Compare surface and peak-nits readout.
+- `src/components/compare.tsx`: three-mode before/after comparator (split / drag / swap).
+- `src/components/converter-controls.tsx`: hero Boost/Saturation slider plus the fine-tune look-control grid.
+- `src/components/chromatic-title.tsx`: chromatic-aberration hero title.
+- `src/components/plasma-field.tsx`: ambient cursor-reactive canvas background; rAF paused via `IntersectionObserver`, `visibilitychange`, and `prefers-reduced-motion`.
+
+### Styles
+
+- `src/app.css`: aggregator that `@import`s the per-surface stylesheets.
+- `src/styles/`: `tokens.css`, `shell.css`, `header.css`, `hero.css`, `preview.css`, `controls.css`, `feedback.css`, `how-it-works.css`, `not-found.css`, `motion.css`.
 
 ### Worker orchestration
 
@@ -35,9 +44,11 @@ Runtime flow:
 
 ### Color and encoding core
 
-- `src/lib/pq.ts`: color transforms + PQ encode + SDR preview mapping.
+- `src/lib/pq.ts`: color transforms + PQ encode (with a 32K-entry LUT for the fast path) + SDR preview mapping (with a 4096-entry sRGB OETF LUT, preview-only).
 - `src/lib/hdr-boost.ts`: single-source boost/nits calibration constants.
+- `src/lib/look-controls.ts`: default look-control values, normalization, and shared preview constants (`PREVIEW_DEBOUNCE_MS`, `PREVIEW_MAX_LONG_EDGE_DEFAULT`).
 - `src/lib/encode-png.ts`: PNG assembly/chunking/compression.
+- `src/lib/icc-profile.ts`: Rec.2020 PQ ICC profile bytes used in the `iCCP` PNG chunk.
 
 ### SEO/config SSOT
 
@@ -63,7 +74,7 @@ Contract is defined in `src/lib/worker-protocol.ts` and validated at runtime in 
 ## Build and Artifact Flow
 
 1. `vite build` prerenders routes.
-2. `scripts/prepare-pages-artifact.mjs` flattens Pages output and generates:
+2. `scripts/prepare-pages-artifact.mjs` flattens Pages output, injects `<link rel="modulepreload">` for the hashed worker chunk into each prerendered HTML, and generates:
    - `dist/404.html`
    - `dist/sitemap.xml`
    - `dist/robots.txt`
