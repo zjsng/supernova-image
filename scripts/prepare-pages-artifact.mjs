@@ -139,6 +139,14 @@ async function findHeroFontFiles() {
   return matched
 }
 
+const LAZY_ROUTE_PATTERNS = [/^how-it-works-.*\.js$/, /^guides-.*\.js$/, /^not-found-.*\.js$/]
+
+async function findLazyRouteChunks() {
+  if (!(await exists(ASSETS_DIR))) return []
+  const entries = await readdir(ASSETS_DIR)
+  return LAZY_ROUTE_PATTERNS.flatMap((pattern) => entries.filter((name) => pattern.test(name)))
+}
+
 async function collectHtmlFiles(dir) {
   const out = []
   const walk = async (current) => {
@@ -196,6 +204,35 @@ async function injectHeroFontPreloads(fontFiles) {
   console.log(`[prepare-pages-artifact] Injected ${fontFiles.length} hero font preload(s) into ${injected} HTML file(s).`)
 }
 
+async function injectLazyRoutePrefetch(chunks) {
+  const htmlFiles = await collectHtmlFiles(DIST_DIR)
+  let injected = 0
+  for (const file of htmlFiles) {
+    const html = await readFile(file, 'utf-8')
+    const scriptMatch = html.match(/<script type="module"[^>]*src="([^"]*\/assets\/)main-[^"]+"/)
+    if (!scriptMatch) continue
+    const assetPrefix = scriptMatch[1]
+    const tags = []
+    for (const chunk of chunks) {
+      const href = `${assetPrefix}${chunk}`
+      if (html.includes(`href="${href}"`)) continue
+      tags.push(`<link rel="prefetch" crossorigin href="${href}">`)
+    }
+    if (tags.length === 0) continue
+    const block = tags.map((tag) => `    ${tag}`).join('\n')
+    const patched = html.replace(/<\/head>/, `${block}\n  </head>`)
+    if (patched === html) continue
+    await writeFile(file, patched)
+    injected++
+  }
+  console.log(`[prepare-pages-artifact] Injected ${chunks.length} lazy-route prefetch(es) into ${injected} HTML file(s).`)
+}
+
+async function writeNojekyll() {
+  await writeFile(path.join(DIST_DIR, '.nojekyll'), '', 'utf8')
+  console.log('[prepare-pages-artifact] Wrote dist/.nojekyll.')
+}
+
 async function writeRobotsTxt(baseUrl) {
   const body = `User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`
   await writeFile(ROBOTS_TXT, body, 'utf8')
@@ -216,6 +253,10 @@ async function main() {
   const heroFontFiles = await findHeroFontFiles()
   if (heroFontFiles.length > 0) await injectHeroFontPreloads(heroFontFiles)
   else console.log('[prepare-pages-artifact] No hero font files found in dist/assets; skipping font preload injection.')
+  const lazyRouteChunks = await findLazyRouteChunks()
+  if (lazyRouteChunks.length > 0) await injectLazyRoutePrefetch(lazyRouteChunks)
+  else console.log('[prepare-pages-artifact] No lazy route chunks found in dist/assets; skipping prefetch injection.')
+  await writeNojekyll()
   await ensureNotFoundPage(baseUrl, notFoundRoute)
   await writeSitemapFromSeoRoutes(baseUrl, routes)
   await writeRobotsTxt(baseUrl)
