@@ -87,15 +87,17 @@ export function App() {
       <LocationProvider>
         <Header />
         <ErrorBoundary>
-          <Router>
-            <Route path={HOME_ROUTE.routerPath} component={Home} />
-            <Route path={HOW_IT_WORKS_ROUTE.routerPath} component={HowItWorks} />
-            {GUIDE_SEO_ROUTES.map((route) => (
-              <Route key={route.id} path={route.routerPath} component={GUIDE_ROUTE_COMPONENT_BY_ID.get(route.id)!} />
-            ))}
-            <Route path={NOT_FOUND_ROUTE.routerPath} component={NotFound} />
-            <Route default component={NotFound} />
-          </Router>
+          <main>
+            <Router>
+              <Route path={HOME_ROUTE.routerPath} component={Home} />
+              <Route path={HOW_IT_WORKS_ROUTE.routerPath} component={HowItWorks} />
+              {GUIDE_SEO_ROUTES.map((route) => (
+                <Route key={route.id} path={route.routerPath} component={GUIDE_ROUTE_COMPONENT_BY_ID.get(route.id)!} />
+              ))}
+              <Route path={NOT_FOUND_ROUTE.routerPath} component={NotFound} />
+              <Route default component={NotFound} />
+            </Router>
+          </main>
         </ErrorBoundary>
       </LocationProvider>
     </AppErrorBoundary>
