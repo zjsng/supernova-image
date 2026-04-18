@@ -9,6 +9,8 @@
   padding: 20px 22px;
   min-width: 0;
   backdrop-filter: blur(8px);
+  container-type: inline-size;
+  container-name: controls-panel;
 }
 
 .hero-sliders {
@@ -242,6 +244,17 @@
   flex-wrap: wrap;
   gap: 10px;
   margin-top: 16px;
+}
+
+@container controls-panel (max-width: 340px) {
+  .btn-row {
+    flex-direction: column;
+  }
+
+  .btn-row .btn {
+    width: 100%;
+    flex: 0 0 auto;
+  }
 }
 
 .btn {
