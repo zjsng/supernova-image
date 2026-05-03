@@ -240,18 +240,19 @@ export function HowItWorks() {
         <h2>The Controls</h2>
         <ul class="how-meta-list">
           <li>
-            <strong>Boost.</strong> HDR export brightness control. 1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits in the final PNG.
+            <strong>Boost.</strong> HDR export brightness. 1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits in the final PNG.
           </li>
           <li>
-            <strong>Saturation.</strong> Primary color intensity control shown in the main panel for quick edits.
+            <strong>Saturation.</strong> Primary color intensity, shown in the main panel for quick edits.
           </li>
           <li>
-            <strong>Advanced.</strong> Exposure, Temperature, Tint, Gamma, Contrast, Blacks, Whites, Clarity, Highlight Saturation,
-            Highlight Roll-off, Shadow Lift, Shadow Glow, and Vibrance for finer grading.
+            <strong>Fine tune.</strong> Exposure, Temperature, Tint, Gamma, Contrast, Highlight Roll-off, Shadow Lift, Vibrance.
           </li>
           <li>
-            <strong>Preview behavior.</strong> Preview uses the converted HDR PNG when the browser/display supports it, with automatic SDR
-            fallback otherwise.
+            <strong>Advanced.</strong> Blacks, Whites, Clarity, Highlight Saturation, Shadow Glow. Tucked behind a disclosure for visitors who want them.
+          </li>
+          <li>
+            <strong>Preview.</strong> Uses the converted HDR PNG when the browser and display support it, with automatic SDR fallback otherwise.
           </li>
         </ul>
       </RevealSection>

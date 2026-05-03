@@ -19,8 +19,28 @@ interface ConverterControlsProps {
 type LookControlKey = keyof LookControls
 
 const PRIMARY_CONTROL_KEYS: LookControlKey[] = ['saturation']
-const PRIMARY_CONTROL_KEY_SET = new Set<LookControlKey>(PRIMARY_CONTROL_KEYS)
-const FINE_TUNE_CONTROL_KEYS = LOOK_CONTROL_KEYS.filter((key) => !PRIMARY_CONTROL_KEY_SET.has(key))
+const SPEC_FINE_TUNE_KEYS: LookControlKey[] = [
+  'exposure',
+  'temperature',
+  'tint',
+  'gamma',
+  'contrast',
+  'highlightRollOff',
+  'shadowLift',
+  'vibrance',
+]
+const ADVANCED_FINE_TUNE_KEYS: LookControlKey[] = ['blacks', 'whites', 'clarity', 'highlightSaturation', 'shadowGlow']
+
+const KNOWN_CONTROL_KEY_SET = new Set<LookControlKey>([
+  ...PRIMARY_CONTROL_KEYS,
+  ...SPEC_FINE_TUNE_KEYS,
+  ...ADVANCED_FINE_TUNE_KEYS,
+])
+
+const ADVANCED_FINE_TUNE_KEYS_RESOLVED: LookControlKey[] = [
+  ...ADVANCED_FINE_TUNE_KEYS,
+  ...LOOK_CONTROL_KEYS.filter((key) => !KNOWN_CONTROL_KEY_SET.has(key)),
+]
 
 const SIGNED_CONTROL_KEYS = new Set<LookControlKey>(['exposure', 'temperature', 'tint', 'blacks', 'whites', 'clarity'])
 
@@ -235,7 +255,15 @@ export function ConverterControls({
         })}
       </div>
 
-      <div class="fine-tune">{FINE_TUNE_CONTROL_KEYS.map(renderLookControl)}</div>
+      <div class="fine-tune">{SPEC_FINE_TUNE_KEYS.map(renderLookControl)}</div>
+
+      <details class="advanced-fine-tune">
+        <summary class="advanced-fine-tune__summary">
+          <span class="advanced-fine-tune__label">Advanced</span>
+          <span class="advanced-fine-tune__chevron" aria-hidden="true">+</span>
+        </summary>
+        <div class="fine-tune advanced-fine-tune__grid">{ADVANCED_FINE_TUNE_KEYS_RESOLVED.map(renderLookControl)}</div>
+      </details>
 
       <div class="preview-note">
         <span class="preview-note__heading">
