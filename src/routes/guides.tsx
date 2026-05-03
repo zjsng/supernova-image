@@ -77,7 +77,6 @@ export function GuideRoutePage({ routeId }: { routeId: string }) {
         <h2>How Supernova Handles This Format</h2>
         <p>{details}</p>
         <ul class="how-meta-list">
-          <li>Process locally in your browser with no uploads.</li>
           <li>Preview edits with a fast SDR approximation.</li>
           <li>Export 16-bit HDR PNG using PQ and BT.2020 metadata.</li>
         </ul>

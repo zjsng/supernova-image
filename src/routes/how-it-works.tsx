@@ -312,7 +312,7 @@ export function HowItWorks() {
       <RevealSection className="how-section">
         <span class="section-eyebrow">§ 06 · Privacy</span>
         <h2>Privacy</h2>
-        <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
+        <p>Conversion runs in your tab. Images stay on your device.</p>
       </RevealSection>
 
       <RevealSection className="how-section">
@@ -364,7 +364,7 @@ export function HowItWorks() {
                 name: 'Is my image uploaded to a server?',
                 acceptedAnswer: {
                   '@type': 'Answer',
-                  text: 'No. Supernova is 100% client-side. No uploads, no server, no analytics. Your images never leave your device.',
+                  text: 'No. Conversion runs entirely in your tab; images stay on your device.',
                 },
               },
             ],

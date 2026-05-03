@@ -77,8 +77,8 @@ function PrivacyRibbon() {
   return (
     <footer class="privacy-ribbon">
       <div class="privacy-ribbon__left">
-        <span class="privacy-ribbon__title">Supernova · client-side HDR PNG</span>
-        <span class="privacy-ribbon__tagline">No uploads · no telemetry · no cookies</span>
+        <span class="privacy-ribbon__title">Supernova · HDR PNG</span>
+        <span class="privacy-ribbon__tagline">Runs in your tab · open source</span>
       </div>
       <nav class="privacy-ribbon__guides" aria-label="Popular guides">
         <span class="privacy-ribbon__guides-label">Guides</span>
