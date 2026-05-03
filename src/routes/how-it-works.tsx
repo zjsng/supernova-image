@@ -205,7 +205,7 @@ export function HowItWorks() {
       </a>
 
       <section class="how-hero">
-        <span class="section-eyebrow">✦ § 00 — Overview</span>
+        <span class="section-eyebrow">✦ § 00 · Overview</span>
         <h1>How HDR PNG Conversion Works</h1>
         <p>
           Supernova converts standard images into HDR PNGs that glow on HDR displays. On compatible browsers/displays, preview shows the
@@ -214,7 +214,7 @@ export function HowItWorks() {
       </section>
 
       <RevealSection className="how-section how-section--flush">
-        <span class="section-eyebrow">§ 01 — The pipeline</span>
+        <span class="section-eyebrow">§ 01 · The pipeline</span>
         <h2>The Pipeline</h2>
         <PipelineFlow />
         <div class="pipeline-steps">
@@ -236,21 +236,21 @@ export function HowItWorks() {
       </RevealSection>
 
       <RevealSection className="how-section">
-        <span class="section-eyebrow">§ 02 — Controls</span>
+        <span class="section-eyebrow">§ 02 · Controls</span>
         <h2>The Controls</h2>
         <ul class="how-meta-list">
           <li>
-            <strong>Boost</strong> — HDR export brightness control. 1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits in the final PNG.
+            <strong>Boost.</strong> HDR export brightness control. 1.0≈100 nits, 4.0≈1600 nits, 10≈10000 nits in the final PNG.
           </li>
           <li>
-            <strong>Saturation</strong> — primary color intensity control shown in the main panel for quick edits.
+            <strong>Saturation.</strong> Primary color intensity control shown in the main panel for quick edits.
           </li>
           <li>
-            <strong>Advanced</strong> — Exposure, Temperature, Tint, Gamma, Contrast, Blacks, Whites, Clarity, Highlight Saturation,
+            <strong>Advanced.</strong> Exposure, Temperature, Tint, Gamma, Contrast, Blacks, Whites, Clarity, Highlight Saturation,
             Highlight Roll-off, Shadow Lift, Shadow Glow, and Vibrance for finer grading.
           </li>
           <li>
-            <strong>Preview behavior</strong> — preview uses the converted HDR PNG when the browser/display supports it, with automatic SDR
+            <strong>Preview behavior.</strong> Preview uses the converted HDR PNG when the browser/display supports it, with automatic SDR
             fallback otherwise.
           </li>
         </ul>
@@ -259,14 +259,14 @@ export function HowItWorks() {
       <RevealSection className="how-section how-section--visual">
         <div class="how-split">
           <div class="how-split__text">
-            <span class="section-eyebrow">§ 03 — Transfer</span>
+            <span class="section-eyebrow">§ 03 · Transfer</span>
             <h2>What is PQ?</h2>
             <p>
               PQ (Perceptual Quantizer) is the transfer function behind HDR10 and Dolby Vision. Unlike gamma (~2.2) which tops out at 100
               nits, PQ maps luminance up to 10,000 nits.
             </p>
             <p>
-              Its curve allocates more precision to dim regions where our eyes are most sensitive — far more efficient than gamma for HDR's
+              Its curve allocates more precision to dim regions where our eyes are most sensitive: far more efficient than gamma for HDR's
               wide brightness range.
             </p>
           </div>
@@ -280,18 +280,18 @@ export function HowItWorks() {
       <RevealSection className="how-section how-section--visual">
         <div class="how-split how-split--reverse">
           <div class="how-split__text">
-            <span class="section-eyebrow">§ 04 — Metadata</span>
+            <span class="section-eyebrow">§ 04 · Metadata</span>
             <h2>The Metadata</h2>
             <p>A valid HDR PNG needs metadata so the display knows how to interpret the pixels:</p>
             <ul class="how-meta-list">
               <li>
-                <strong>cICP</strong> — declares BT.2020 primaries + PQ transfer. The primary HDR signal.
+                <strong>cICP.</strong> Declares BT.2020 primaries + PQ transfer. The primary HDR signal.
               </li>
               <li>
-                <strong>cHRM</strong> — BT.2020 chromaticity coordinates as fallback.
+                <strong>cHRM.</strong> BT.2020 chromaticity coordinates as fallback.
               </li>
               <li>
-                <strong>iCCP</strong> — embedded ICC profile for broadest compatibility. Triggers EDR on macOS.
+                <strong>iCCP.</strong> Embedded ICC profile for broadest compatibility. Triggers EDR on macOS.
               </li>
             </ul>
           </div>
@@ -302,20 +302,20 @@ export function HowItWorks() {
       </RevealSection>
 
       <RevealSection className="how-section">
-        <span class="section-eyebrow">§ 05 — Support</span>
+        <span class="section-eyebrow">§ 05 · Support</span>
         <h2>Compatibility</h2>
         <p>Requires an HDR display and a supported browser. On SDR displays, the image renders as a normal PNG.</p>
         <BrowserCompat />
       </RevealSection>
 
       <RevealSection className="how-section">
-        <span class="section-eyebrow">§ 06 — Privacy</span>
+        <span class="section-eyebrow">§ 06 · Privacy</span>
         <h2>Privacy</h2>
         <p>100% client-side. No uploads, no server, no analytics. Your images never leave your device.</p>
       </RevealSection>
 
       <RevealSection className="how-section">
-        <span class="section-eyebrow">§ 07 — Guides</span>
+        <span class="section-eyebrow">§ 07 · Guides</span>
         <h2>Related Guides</h2>
         <ul class="how-meta-list">
           {GUIDE_SEO_ROUTES.map((route) => (

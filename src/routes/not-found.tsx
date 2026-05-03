@@ -8,7 +8,7 @@ export function NotFound() {
       <div class="not-found__star" aria-hidden="true" />
       <span class="not-found__eyebrow">✦ 404 · Photon lost in transit</span>
       <h1>Signal Lost</h1>
-      <p>This page drifted beyond the visible spectrum. Nothing was uploaded, nothing was lost — just the route.</p>
+      <p>This page drifted beyond the visible spectrum. Nothing was lost; just the route.</p>
       <a class="not-found__link" href={HOME_ROUTE.routerPath}>
         <ArrowLeftIcon />
         Back to the converter

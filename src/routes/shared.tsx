@@ -64,7 +64,7 @@ export function BrowserCompat() {
     { name: 'Chrome', engine: 'cICP', status: 'full' as const, note: 'Full HDR rendering' },
     { name: 'Edge', engine: 'cICP', status: 'full' as const, note: 'Full HDR rendering' },
     { name: 'Safari', engine: 'ICC / EDR', status: 'partial' as const, note: 'macOS only' },
-    { name: 'Firefox', engine: '—', status: 'none' as const, note: 'No extended brightness' },
+    { name: 'Firefox', engine: 'n/a', status: 'none' as const, note: 'No extended brightness' },
   ]
 
   return (
