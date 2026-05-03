@@ -5,7 +5,7 @@ import { BOOST_UI_MIN } from '../lib/hdr-boost'
 import { getWorkerErrorCode, getWorkerErrorMessage, useConverterWorker } from '../hooks/use-converter-worker'
 import { ConverterControls } from '../components/converter-controls'
 import { PreviewPane } from '../components/preview-pane'
-import { PlasmaField } from '../components/plasma-field'
+import { DeepFieldBackground } from '../components/deep-field-background'
 import { SEO_BASE_URL } from '../lib/seo-routes'
 import { HOME_ROUTE, RouteJsonLd, useSeoRouteHead } from './shared'
 
@@ -443,7 +443,7 @@ export function Home() {
       onDragLeave={!image ? handleDragLeave : undefined}
       onDrop={!image ? handleDrop : undefined}
     >
-      <PlasmaField />
+      <DeepFieldBackground />
       <div class="grain-overlay" aria-hidden="true" />
 
       <div class="prism-home__content">

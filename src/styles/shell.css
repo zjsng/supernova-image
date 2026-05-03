@@ -1,4 +1,4 @@
-/* Prism home shell + plasma + grain. */
+/* Prism home shell + background field + grain. */
 
 .prism-home {
   position: relative;
@@ -18,14 +18,24 @@
   padding: 0 48px 64px;
 }
 
-.plasma-field {
+.deep-field-background,
+.grain-overlay {
   position: fixed;
   inset: 0;
-  z-index: 0;
   pointer-events: none;
 }
 
-.plasma-field canvas {
+.deep-field-background {
+  z-index: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 64% 42%, oklch(0.32 0.07 45 / 0.34), transparent 46%),
+    radial-gradient(ellipse at 22% 82%, oklch(0.26 0.08 210 / 0.26), transparent 42%),
+    linear-gradient(115deg, oklch(0.105 0.012 64), oklch(0.072 0.01 58) 50%, oklch(0.12 0.015 35));
+  contain: strict;
+}
+
+.deep-field-background__canvas {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -33,12 +43,85 @@
   display: block;
 }
 
-.grain-overlay {
-  position: fixed;
+.deep-field-background__canvas--fallback {
+  display: none;
+}
+
+.deep-field-observatory::before {
+  content: '';
+  position: absolute;
+  inset: -6%;
+  opacity: 0.68;
+  transform: translate3d(-2%, 1%, 0);
+  animation: deep-field-comet-drift 24s linear infinite alternate;
+  will-change: transform, opacity;
+  background:
+    linear-gradient(
+      104deg,
+      transparent 0 18%,
+      oklch(0.82 0.19 70 / 0.02) 21%,
+      oklch(0.86 0.18 70 / 0.22) 22%,
+      oklch(0.86 0.18 70 / 0.04) 27%,
+      transparent 35%
+    ),
+    linear-gradient(
+      112deg,
+      transparent 0 64%,
+      oklch(0.84 0.16 210 / 0.03) 67%,
+      oklch(0.84 0.16 210 / 0.18) 68%,
+      oklch(0.84 0.16 210 / 0.04) 73%,
+      transparent 82%
+    ),
+    radial-gradient(circle at 7% 18%, oklch(0.96 0.008 75 / 0.6) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 16% 72%, oklch(0.84 0.16 210 / 0.45) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 23% 32%, oklch(0.96 0.008 75 / 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 29% 86%, oklch(0.82 0.19 70 / 0.42) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 38% 21%, oklch(0.96 0.008 75 / 0.52) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 47% 64%, oklch(0.84 0.16 210 / 0.44) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 54% 13%, oklch(0.96 0.008 75 / 0.46) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 61% 77%, oklch(0.82 0.19 70 / 0.45) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 68% 36%, oklch(0.96 0.008 75 / 0.64) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 74% 89%, oklch(0.84 0.16 210 / 0.46) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 83% 24%, oklch(0.96 0.008 75 / 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 91% 69%, oklch(0.82 0.19 70 / 0.44) 0 1px, transparent 1.5px),
+    radial-gradient(ellipse at 62% 45%, oklch(0.82 0.19 70 / 0.08), transparent 38%),
+    radial-gradient(ellipse at 28% 78%, oklch(0.84 0.16 210 / 0.08), transparent 36%);
+}
+
+.deep-field-observatory::after {
+  content: '';
+  position: absolute;
   inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 47%, transparent 0 46%, oklch(0.07 0.009 56 / 0.24) 71%, oklch(0.048 0.008 56 / 0.82) 100%),
+    linear-gradient(180deg, oklch(0.055 0.008 56 / 0.66), transparent 27%, transparent 72%, oklch(0.052 0.008 56 / 0.7));
+}
+
+.grain-overlay {
   z-index: 1;
-  pointer-events: none;
-  opacity: 0.04;
+  opacity: 0.032;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes deep-field-comet-drift {
+  0% {
+    transform: translate3d(-3%, 1%, 0);
+    opacity: 0.56;
+  }
+
+  48% {
+    opacity: 0.76;
+  }
+
+  100% {
+    transform: translate3d(3%, -1%, 0);
+    opacity: 0.62;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deep-field-observatory::before {
+    animation: none;
+  }
 }
