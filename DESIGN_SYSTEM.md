@@ -220,6 +220,7 @@ Every fine-tune slider uses the same three-column grid. **Do not bypass this** â
 | 5     | Compare drag handle, header                             |
 | 6     | Compare mode switch                                     |
 | 10    | Processing overlay                                      |
+| 1000  | Skip link (focus-visible accessibility primitive)       |
 | 10000 | Design bundle tweaks panel (not shipped)                |
 
 Don't reach for a new z-band without pinning down where it fits here.

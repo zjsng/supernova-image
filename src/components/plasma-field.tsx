@@ -147,8 +147,9 @@ export function PlasmaField() {
         height / 2,
         Math.max(width, height) * 0.75,
       )
-      vignette.addColorStop(0, 'rgba(0,0,0,0)')
-      vignette.addColorStop(1, 'rgba(0,0,0,0.55)')
+      // Warm-tinted near-black to honor the Tinted-Neutral Rule on a canvas surface.
+      vignette.addColorStop(0, 'rgba(8, 5, 0, 0)')
+      vignette.addColorStop(1, 'rgba(8, 5, 0, 0.55)')
       context.fillStyle = vignette
       context.fillRect(0, 0, width, height)
 

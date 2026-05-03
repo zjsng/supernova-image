@@ -38,7 +38,6 @@
   --text-muted: var(--ink-3);
   --glow: var(--accent-dim);
   --glow-strong: oklch(0.82 0.19 70 / 0.4);
-  --surface-glass: rgba(255, 255, 255, 0.03);
   --border-subtle: var(--line-soft);
   --radius-lg: 10px;
   --radius-md: 6px;
