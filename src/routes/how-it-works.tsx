@@ -249,10 +249,12 @@ export function HowItWorks() {
             <strong>Fine tune.</strong> Exposure, Temperature, Tint, Gamma, Contrast, Highlight Roll-off, Shadow Lift, Vibrance.
           </li>
           <li>
-            <strong>Advanced.</strong> Blacks, Whites, Clarity, Highlight Saturation, Shadow Glow. Tucked behind a disclosure for visitors who want them.
+            <strong>Advanced.</strong> Blacks, Whites, Clarity, Highlight Saturation, Shadow Glow. Tucked behind a disclosure for visitors
+            who want them.
           </li>
           <li>
-            <strong>Preview.</strong> Uses the converted HDR PNG when the browser and display support it, with automatic SDR fallback otherwise.
+            <strong>Preview.</strong> Uses the converted HDR PNG when the browser and display support it, with automatic SDR fallback
+            otherwise.
           </li>
         </ul>
       </RevealSection>

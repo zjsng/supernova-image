@@ -27,7 +27,9 @@ export class AppErrorBoundary extends Component<AppErrorBoundaryProps, AppErrorB
     if (this.state.hasError) {
       return (
         <div class="error-banner error-banner--crash" role="alert">
-          <span class="error-banner__icon" aria-hidden="true">⚠</span>
+          <span class="error-banner__icon" aria-hidden="true">
+            ⚠
+          </span>
           <div class="error-banner__body">
             <p>Something went wrong while rendering the app.</p>
             <p class="error-banner__detail">{this.state.message}</p>

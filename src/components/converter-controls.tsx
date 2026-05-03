@@ -31,11 +31,7 @@ const SPEC_FINE_TUNE_KEYS: LookControlKey[] = [
 ]
 const ADVANCED_FINE_TUNE_KEYS: LookControlKey[] = ['blacks', 'whites', 'clarity', 'highlightSaturation', 'shadowGlow']
 
-const KNOWN_CONTROL_KEY_SET = new Set<LookControlKey>([
-  ...PRIMARY_CONTROL_KEYS,
-  ...SPEC_FINE_TUNE_KEYS,
-  ...ADVANCED_FINE_TUNE_KEYS,
-])
+const KNOWN_CONTROL_KEY_SET = new Set<LookControlKey>([...PRIMARY_CONTROL_KEYS, ...SPEC_FINE_TUNE_KEYS, ...ADVANCED_FINE_TUNE_KEYS])
 
 const ADVANCED_FINE_TUNE_KEYS_RESOLVED: LookControlKey[] = [
   ...ADVANCED_FINE_TUNE_KEYS,
@@ -260,7 +256,9 @@ export function ConverterControls({
       <details class="advanced-fine-tune">
         <summary class="advanced-fine-tune__summary">
           <span class="advanced-fine-tune__label">Advanced</span>
-          <span class="advanced-fine-tune__chevron" aria-hidden="true">+</span>
+          <span class="advanced-fine-tune__chevron" aria-hidden="true">
+            +
+          </span>
         </summary>
         <div class="fine-tune advanced-fine-tune__grid">{ADVANCED_FINE_TUNE_KEYS_RESOLVED.map(renderLookControl)}</div>
       </details>

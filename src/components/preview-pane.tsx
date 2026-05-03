@@ -133,9 +133,7 @@ export function PreviewPane({
         <div class="drop-zone__inner">
           <span class="hero__eyebrow">In-browser · Local · Open-source</span>
           <ChromaticTitle as="h1" lines={['Drop an image.', 'Get HDR back.']} accentLine={1} />
-          <p class="hero__subhead">
-            PNG, JPEG, WebP, or AVIF in. True HDR PNG with PQ transfer and Rec.2020 gamut out.
-          </p>
+          <p class="hero__subhead">PNG, JPEG, WebP, or AVIF in. True HDR PNG with PQ transfer and Rec.2020 gamut out.</p>
           <span class="drop-button" aria-hidden="true">
             <span class="drop-button__plus" />
             <span class="drop-button__copy">

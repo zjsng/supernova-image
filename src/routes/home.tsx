@@ -471,7 +471,9 @@ export function Home() {
 
         {errorMessage && (
           <div class="error-banner" role="alert">
-            <span class="error-banner__icon" aria-hidden="true">⚠</span>
+            <span class="error-banner__icon" aria-hidden="true">
+              ⚠
+            </span>
             <span class="error-banner__message">{errorMessage}</span>
           </div>
         )}
