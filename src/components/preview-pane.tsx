@@ -162,25 +162,26 @@ export function PreviewPane({
           <span aria-label={`${widthValue} by ${heightValue} pixels`}>
             {widthValue} <span aria-hidden="true">×</span> {heightValue}
           </span>
-          <div class="preview-mode-picker" role="group" aria-label="Compare mode">
-            {COMPARE_MODES.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                class={`preview-mode-picker__btn${compareMode === option.id ? ' preview-mode-picker__btn--active' : ''}`}
-                onClick={() => setCompareMode(option.id)}
-                aria-pressed={compareMode === option.id}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
       <PeakReadout boost={boost} exposure={exposure} />
 
       <div class="preview-frame" aria-busy={isBusy}>
+        <div class="preview-mode-picker preview-mode-picker--frame" role="group" aria-label="Compare mode">
+          {COMPARE_MODES.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              class={`preview-mode-picker__btn${compareMode === option.id ? ' preview-mode-picker__btn--active' : ''}`}
+              onClick={() => setCompareMode(option.id)}
+              aria-pressed={compareMode === option.id}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
         <Compare
           mode={compareMode}
           beforeSrc={image.src}

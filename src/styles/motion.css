@@ -47,6 +47,54 @@
   }
 }
 
+@keyframes download-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.42) rotate(-18deg);
+  }
+  34% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18) rotate(26deg);
+  }
+}
+
+@keyframes download-scan {
+  0% {
+    opacity: 0;
+    transform: translateX(-120%);
+  }
+  28% {
+    opacity: 0.86;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(120%);
+  }
+}
+
+@keyframes download-receipt-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes download-flare-spin {
+  from {
+    transform: rotate(-40deg) scale(0.78);
+  }
+  to {
+    transform: rotate(140deg) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -58,8 +106,17 @@
 
   .hdr-bloom,
   .scan-bar,
-  .not-found__star::before {
+  .not-found__star::before,
+  .btn-download--success::before,
+  .btn-download--success::after,
+  .download-receipt,
+  .download-receipt__flare::before {
     animation: none !important;
+  }
+
+  .btn-download--success::before,
+  .btn-download--success::after {
+    opacity: 0 !important;
   }
 }
 
@@ -74,6 +131,10 @@
 
   .preview-layout {
     grid-template-columns: 1fr;
+  }
+
+  .preview-frame {
+    min-height: clamp(380px, 56vw, 520px);
   }
 
   .compat-grid {
@@ -130,5 +191,11 @@
 
   .preview-frame {
     min-height: 520px;
+  }
+}
+
+@media (min-width: 881px) {
+  #app:has(.preview-layout) .prism-home__content {
+    padding-bottom: 128px;
   }
 }

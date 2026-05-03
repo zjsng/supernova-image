@@ -55,6 +55,8 @@
 html,
 body {
   min-height: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   background: var(--bg-0);
   color: var(--ink);
   font-family: var(--font-body);
