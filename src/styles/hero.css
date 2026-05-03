@@ -231,7 +231,7 @@
   font-size: 9px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
   white-space: nowrap;
   transition: color var(--transition-base);
 }

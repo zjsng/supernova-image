@@ -207,7 +207,7 @@
 .pipeline-arrow {
   display: flex;
   align-items: center;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
   flex-shrink: 0;
 }
 
@@ -338,7 +338,7 @@
 
 .compat-card--none .compat-card__status {
   background: oklch(0.2 0.01 55);
-  color: var(--ink-4);
+  color: var(--ink-text-min);
 }
 
 .compat-card__name {
