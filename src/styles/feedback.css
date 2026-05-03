@@ -13,8 +13,10 @@
 }
 
 .privacy-ribbon {
+  position: relative;
+  z-index: 2;
   margin-top: 32px;
-  padding: 20px 0 0;
+  padding: 20px 48px 24px;
   border-top: 1px solid var(--line-soft);
   display: flex;
   flex-wrap: wrap;
@@ -26,6 +28,12 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-4);
+}
+
+@media (max-width: 880px) {
+  .privacy-ribbon {
+    padding: 20px 24px 24px;
+  }
 }
 
 .privacy-ribbon__left {

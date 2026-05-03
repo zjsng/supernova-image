@@ -1,0 +1,490 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-03T00:00:00Z",
+  "title": "Design System: Supernova",
+  "extensions": {
+    "colorMeta": {
+      "hearth-black": {
+        "role": "neutral",
+        "displayName": "Hearth Black",
+        "canonical": "oklch(0.12 0.008 60)",
+        "tonalRamp": [
+          "oklch(0.06 0.004 60)",
+          "oklch(0.10 0.006 60)",
+          "oklch(0.12 0.008 60)",
+          "oklch(0.16 0.010 55)",
+          "oklch(0.20 0.012 55)",
+          "oklch(0.28 0.012 55)",
+          "oklch(0.38 0.012 60)",
+          "oklch(0.55 0.012 65)"
+        ]
+      },
+      "hearth-black-1": {
+        "role": "neutral",
+        "displayName": "Hearth Black 1",
+        "canonical": "oklch(0.16 0.01 55)",
+        "tonalRamp": [
+          "oklch(0.08 0.005 55)",
+          "oklch(0.12 0.008 55)",
+          "oklch(0.16 0.010 55)",
+          "oklch(0.22 0.012 55)",
+          "oklch(0.30 0.014 55)",
+          "oklch(0.45 0.014 55)",
+          "oklch(0.65 0.012 60)",
+          "oklch(0.92 0.008 65)"
+        ]
+      },
+      "hearth-black-2": {
+        "role": "neutral",
+        "displayName": "Hearth Black 2",
+        "canonical": "oklch(0.2 0.012 55)",
+        "tonalRamp": [
+          "oklch(0.10 0.006 55)",
+          "oklch(0.15 0.009 55)",
+          "oklch(0.20 0.012 55)",
+          "oklch(0.28 0.014 55)",
+          "oklch(0.40 0.014 55)",
+          "oklch(0.55 0.014 60)",
+          "oklch(0.72 0.012 65)",
+          "oklch(0.92 0.008 70)"
+        ]
+      },
+      "bone-light": {
+        "role": "neutral",
+        "displayName": "Bone Light",
+        "canonical": "oklch(0.96 0.008 75)",
+        "tonalRamp": [
+          "oklch(0.20 0.010 70)",
+          "oklch(0.38 0.012 60)",
+          "oklch(0.55 0.012 65)",
+          "oklch(0.70 0.011 68)",
+          "oklch(0.78 0.010 70)",
+          "oklch(0.86 0.009 72)",
+          "oklch(0.92 0.009 74)",
+          "oklch(0.96 0.008 75)"
+        ]
+      },
+      "bone-light-2": {
+        "role": "neutral",
+        "displayName": "Bone Light 2",
+        "canonical": "oklch(0.78 0.01 70)",
+        "tonalRamp": [
+          "oklch(0.18 0.010 60)",
+          "oklch(0.32 0.011 65)",
+          "oklch(0.48 0.012 68)",
+          "oklch(0.62 0.011 70)",
+          "oklch(0.78 0.010 70)",
+          "oklch(0.86 0.010 72)",
+          "oklch(0.92 0.009 74)",
+          "oklch(0.96 0.008 75)"
+        ]
+      },
+      "bone-light-3": {
+        "role": "neutral",
+        "displayName": "Bone Light 3",
+        "canonical": "oklch(0.55 0.012 65)",
+        "tonalRamp": [
+          "oklch(0.16 0.008 60)",
+          "oklch(0.28 0.011 60)",
+          "oklch(0.40 0.012 62)",
+          "oklch(0.55 0.012 65)",
+          "oklch(0.68 0.012 68)",
+          "oklch(0.80 0.011 70)",
+          "oklch(0.90 0.009 72)",
+          "oklch(0.96 0.008 75)"
+        ]
+      },
+      "bone-light-4": {
+        "role": "neutral",
+        "displayName": "Bone Light 4",
+        "canonical": "oklch(0.38 0.012 60)",
+        "tonalRamp": [
+          "oklch(0.12 0.008 55)",
+          "oklch(0.22 0.010 58)",
+          "oklch(0.30 0.012 60)",
+          "oklch(0.38 0.012 60)",
+          "oklch(0.50 0.012 62)",
+          "oklch(0.65 0.011 65)",
+          "oklch(0.82 0.010 70)",
+          "oklch(0.95 0.008 75)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "oklch(0.28 0.012 55)",
+        "tonalRamp": [
+          "oklch(0.10 0.006 55)",
+          "oklch(0.18 0.009 55)",
+          "oklch(0.24 0.011 55)",
+          "oklch(0.28 0.012 55)",
+          "oklch(0.40 0.013 55)",
+          "oklch(0.55 0.013 60)",
+          "oklch(0.75 0.011 65)",
+          "oklch(0.92 0.008 70)"
+        ]
+      },
+      "line-soft": {
+        "role": "neutral",
+        "displayName": "Line Soft",
+        "canonical": "oklch(0.22 0.01 55 / 0.55)",
+        "tonalRamp": [
+          "oklch(0.10 0.006 55 / 0.55)",
+          "oklch(0.16 0.008 55 / 0.55)",
+          "oklch(0.22 0.010 55 / 0.55)",
+          "oklch(0.30 0.012 55 / 0.55)",
+          "oklch(0.42 0.012 55 / 0.55)",
+          "oklch(0.55 0.012 60 / 0.55)",
+          "oklch(0.72 0.011 65 / 0.55)",
+          "oklch(0.92 0.008 70 / 0.55)"
+        ]
+      },
+      "headroom-amber": {
+        "role": "primary",
+        "displayName": "Headroom Amber",
+        "canonical": "oklch(0.82 0.19 70)",
+        "tonalRamp": [
+          "oklch(0.18 0.05 70)",
+          "oklch(0.32 0.10 70)",
+          "oklch(0.48 0.14 70)",
+          "oklch(0.62 0.17 70)",
+          "oklch(0.74 0.19 70)",
+          "oklch(0.82 0.19 70)",
+          "oklch(0.90 0.13 70)",
+          "oklch(0.97 0.04 70)"
+        ]
+      },
+      "aberration-pink": {
+        "role": "secondary",
+        "displayName": "Aberration Pink",
+        "canonical": "oklch(0.78 0.22 350)",
+        "tonalRamp": [
+          "oklch(0.16 0.06 350)",
+          "oklch(0.28 0.12 350)",
+          "oklch(0.42 0.17 350)",
+          "oklch(0.58 0.20 350)",
+          "oklch(0.70 0.22 350)",
+          "oklch(0.78 0.22 350)",
+          "oklch(0.88 0.15 350)",
+          "oklch(0.96 0.05 350)"
+        ]
+      },
+      "compat-lime": {
+        "role": "tertiary",
+        "displayName": "Compat Lime",
+        "canonical": "oklch(0.88 0.2 130)",
+        "tonalRamp": [
+          "oklch(0.20 0.06 130)",
+          "oklch(0.34 0.11 130)",
+          "oklch(0.50 0.16 130)",
+          "oklch(0.66 0.19 130)",
+          "oklch(0.80 0.20 130)",
+          "oklch(0.88 0.20 130)",
+          "oklch(0.93 0.14 130)",
+          "oklch(0.97 0.05 130)"
+        ]
+      },
+      "aberration-cyan": {
+        "role": "reserve",
+        "displayName": "Aberration Cyan",
+        "canonical": "oklch(0.84 0.16 210)",
+        "tonalRamp": [
+          "oklch(0.18 0.04 210)",
+          "oklch(0.32 0.09 210)",
+          "oklch(0.48 0.13 210)",
+          "oklch(0.62 0.15 210)",
+          "oklch(0.74 0.16 210)",
+          "oklch(0.84 0.16 210)",
+          "oklch(0.91 0.11 210)",
+          "oklch(0.97 0.04 210)"
+        ]
+      },
+      "reserve-violet": {
+        "role": "reserve",
+        "displayName": "Reserve Violet",
+        "canonical": "oklch(0.72 0.2 300)",
+        "tonalRamp": [
+          "oklch(0.16 0.06 300)",
+          "oklch(0.28 0.11 300)",
+          "oklch(0.42 0.16 300)",
+          "oklch(0.56 0.19 300)",
+          "oklch(0.66 0.20 300)",
+          "oklch(0.72 0.20 300)",
+          "oklch(0.86 0.13 300)",
+          "oklch(0.96 0.04 300)"
+        ]
+      },
+      "spectral-red": {
+        "role": "reserve",
+        "displayName": "Spectral Red",
+        "canonical": "oklch(0.78 0.2 25)",
+        "tonalRamp": [
+          "oklch(0.18 0.06 25)",
+          "oklch(0.30 0.11 25)",
+          "oklch(0.44 0.16 25)",
+          "oklch(0.58 0.19 25)",
+          "oklch(0.70 0.20 25)",
+          "oklch(0.78 0.20 25)",
+          "oklch(0.88 0.13 25)",
+          "oklch(0.96 0.04 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Chromatic hero title only. Tight tracking pulls the cyan/pink offset layers into perceptual unity with the main span."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "How It Works h1. Same display family, less tight, less large."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Preview filename, hero slider value, peak metric value. The 22px sizing is a signature — bigger than typical UI numerics because the value is what the user is looking at."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "UI body and subhead at 1.55 line-height. Cap line length at 65–75ch for prose runs."
+      },
+      "body-long": {
+        "displayName": "Body Long",
+        "purpose": "How It Works prose only. 17px / 1.65 lh for read-not-scan reading mode."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Every fine-tune slider label and value. Uppercase mono with 0.06em tracking — load-bearing tracking, without it the type looks cramped."
+      },
+      "eyebrow": {
+        "displayName": "Eyebrow",
+        "purpose": "Hero eyebrow, header brand, privacy ribbon. Widest tracking (0.32em) on the page; signals metadata, not content."
+      }
+    },
+    "shadows": [
+      {
+        "name": "accent-halo",
+        "value": "0 0 30px var(--accent-dim), 0 0 60px var(--accent-dim)",
+        "purpose": "Resting glow on the primary download CTA. Doubled for soft falloff."
+      },
+      {
+        "name": "thumb-halo",
+        "value": "0 0 16px var(--accent-dim), 0 8px 24px rgba(0, 0, 0, 0.5)",
+        "purpose": "Slider thumb. Primary glow plus single warm grounding shadow."
+      },
+      {
+        "name": "hero-card-glow",
+        "value": "inset 0 1px 0 oklch(0.5 0.05 60 / 0.3), 0 0 32px oklch(0.4 0.1 60 / 0.2)",
+        "purpose": "Hero slider card. Inset top warm rim light plus diffuse external warmth."
+      },
+      {
+        "name": "drop-button-press",
+        "value": "0 0 40px var(--accent-dim)",
+        "purpose": "Drop-button hover/focus halo. Outer accent wash signaling press-readiness."
+      },
+      {
+        "name": "drag-knob-halo",
+        "value": "0 0 30px var(--accent), 0 4px 16px rgba(0, 0, 0, 0.6)",
+        "purpose": "Compare-mode drag handle. Bright accent ring on a darker grounding shadow."
+      },
+      {
+        "name": "scan-bar-glow",
+        "value": "0 0 20px var(--accent)",
+        "purpose": "Processing overlay scan-bar. Single accent glow on the 2px sweep line."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-base",
+        "value": "200ms ease",
+        "purpose": "Default for background, border, color, box-shadow, opacity changes."
+      },
+      {
+        "name": "transition-slow",
+        "value": "320ms ease",
+        "purpose": "Reserved for larger state shifts."
+      },
+      {
+        "name": "thumb-shadow",
+        "value": "120ms",
+        "purpose": "Slider thumb shadow expansion on hover."
+      },
+      {
+        "name": "peak-bar",
+        "value": "180ms",
+        "purpose": "Peak-readout histogram bar height transitions."
+      },
+      {
+        "name": "drop-overlay",
+        "value": "220ms",
+        "purpose": "Drop-zone dragover overlay fade."
+      },
+      {
+        "name": "scan",
+        "value": "1.5s ease-in-out infinite",
+        "purpose": "Processing overlay bar sweep top-to-bottom."
+      },
+      {
+        "name": "bloom-drift",
+        "value": "12s ease-in-out infinite alternate",
+        "purpose": "HDR bloom on the after preview. Slow ambient drift."
+      },
+      {
+        "name": "pulse-dot",
+        "value": "2.8s ease-in-out infinite",
+        "purpose": "404-page star pulse."
+      }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "880px" },
+      { "name": "sm", "value": "560px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Download)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Download CTA. Headroom Amber background, near-black ink, doubled accent halo at rest.",
+      "html": "<button class=\"ds-btn-primary\" type=\"button\">DOWNLOAD HDR PNG</button>",
+      "css": ".ds-btn-primary { background: oklch(0.82 0.19 70); color: #0a0a0a; padding: 10px 18px; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; border: none; border-radius: 4px; cursor: pointer; box-shadow: 0 0 30px oklch(0.82 0.19 70 / 0.15), 0 0 60px oklch(0.82 0.19 70 / 0.15); transition: background 200ms ease, box-shadow 200ms ease, transform 200ms ease; } .ds-btn-primary:hover { box-shadow: 0 0 40px oklch(0.82 0.19 70 / 0.4), 0 0 80px oklch(0.82 0.19 70 / 0.2); transform: translateY(-1px); } .ds-btn-primary:focus-visible { outline: 2px solid oklch(0.82 0.19 70); outline-offset: 2px; } .ds-btn-primary:disabled { background: oklch(0.4 0.05 60); color: oklch(0.55 0.012 65); box-shadow: none; cursor: not-allowed; }"
+    },
+    {
+      "name": "Secondary Button (Reset)",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Quiet secondary action. Transparent fill, mono uppercase text, line border.",
+      "html": "<button class=\"ds-btn-secondary\" type=\"button\">RESET</button>",
+      "css": ".ds-btn-secondary { background: transparent; color: oklch(0.78 0.01 70); padding: 10px 18px; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid oklch(0.28 0.012 55); border-radius: 4px; cursor: pointer; transition: color 200ms ease, border-color 200ms ease; } .ds-btn-secondary:hover { color: oklch(0.96 0.008 75); border-color: oklch(0.55 0.012 65); } .ds-btn-secondary:focus-visible { outline: 2px solid oklch(0.82 0.19 70); outline-offset: 2px; }"
+    },
+    {
+      "name": "Drop Button (File Picker)",
+      "kind": "button",
+      "refersTo": "drop-button",
+      "description": "The page's only file picker. Glassmorphic at rest, Headroom Amber on press.",
+      "html": "<button class=\"ds-drop-button\" type=\"button\"><span class=\"ds-drop-button__plus\" aria-hidden=\"true\"></span><span class=\"ds-drop-button__title\">Drop an image</span><span class=\"ds-drop-button__hint\">PNG · JPEG · WEBP · AVIF</span></button>",
+      "css": ".ds-drop-button { display: inline-flex; flex-direction: column; align-items: center; gap: 10px; background: oklch(0.14 0.01 55 / 0.6); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); color: oklch(0.96 0.008 75); padding: 14px 18px 22px; border: 1px solid oklch(0.28 0.012 55); border-radius: 8px; cursor: pointer; transition: background 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease; } .ds-drop-button__plus { position: relative; width: 22px; height: 22px; } .ds-drop-button__plus::before, .ds-drop-button__plus::after { content: ''; position: absolute; left: 50%; top: 50%; background: currentColor; transform: translate(-50%, -50%); } .ds-drop-button__plus::before { width: 10px; height: 2px; } .ds-drop-button__plus::after { width: 2px; height: 10px; } .ds-drop-button__title { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 15px; font-weight: 600; } .ds-drop-button__hint { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: oklch(0.55 0.012 65); } .ds-drop-button:hover, .ds-drop-button:focus-visible { background: oklch(0.82 0.19 70); border-color: oklch(0.82 0.19 70); color: #0a0a0a; box-shadow: 0 0 40px oklch(0.82 0.19 70 / 0.15); outline: none; } .ds-drop-button:hover .ds-drop-button__hint, .ds-drop-button:focus-visible .ds-drop-button__hint { color: oklch(0.2 0.02 55); }"
+    },
+    {
+      "name": "Hero Slider (Boost / Saturation)",
+      "kind": "custom",
+      "refersTo": "hero-slider",
+      "description": "Dominant control. Warm glowing card, accent-colored 22px value, gradient fill.",
+      "html": "<div class=\"ds-hero-slider\"><div class=\"ds-hero-slider__head\"><div class=\"ds-hero-slider__label-block\"><span class=\"ds-hero-slider__label\">Boost</span><span class=\"ds-hero-slider__sub\">PEAK NITS</span></div><span class=\"ds-hero-slider__value\">2.4×</span></div><input class=\"ds-hero-slider__input\" type=\"range\" min=\"1\" max=\"6\" step=\"0.1\" value=\"2.4\" aria-label=\"Boost\" /></div>",
+      "css": ".ds-hero-slider { background: linear-gradient(180deg, oklch(0.18 0.04 60 / 0.5), oklch(0.14 0.02 55 / 0.2)); border: 1px solid oklch(0.30 0.04 60 / 0.5); border-radius: 6px; padding: 18px 18px 12px; box-shadow: inset 0 1px 0 oklch(0.5 0.05 60 / 0.3), 0 0 32px oklch(0.4 0.1 60 / 0.2); color: oklch(0.96 0.008 75); font-family: 'Space Grotesk', system-ui, sans-serif; } .ds-hero-slider__head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 14px; } .ds-hero-slider__label-block { display: flex; flex-direction: column; gap: 2px; } .ds-hero-slider__label { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; } .ds-hero-slider__sub { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 9.5px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: oklch(0.55 0.012 65); } .ds-hero-slider__value { font-size: 22px; font-weight: 500; letter-spacing: -0.02em; color: oklch(0.82 0.19 70); font-variant-numeric: tabular-nums; } .ds-hero-slider__input { -webkit-appearance: none; appearance: none; width: 100%; height: 6px; border-radius: 3px; background: linear-gradient(90deg, oklch(0.55 0.15 40), oklch(0.75 0.18 60), oklch(0.8 0.2 85)); box-shadow: 0 0 12px oklch(0.7 0.18 60 / 0.4); cursor: pointer; } .ds-hero-slider__input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%; background: oklch(0.96 0.008 75); border: 2px solid oklch(0.82 0.19 70); box-shadow: 0 0 16px oklch(0.82 0.19 70 / 0.5), 0 8px 24px rgba(0, 0, 0, 0.5); cursor: grab; transition: box-shadow 120ms ease; } .ds-hero-slider__input::-webkit-slider-thumb:hover { box-shadow: 0 0 24px oklch(0.82 0.19 70 / 0.7), 0 8px 24px rgba(0, 0, 0, 0.5); }"
+    },
+    {
+      "name": "Fine-Tune Slider (Look Control)",
+      "kind": "custom",
+      "refersTo": "fine-tune-slider",
+      "description": "Quiet uniform-grid control. Every non-hero slider goes here.",
+      "html": "<div class=\"ds-slider-row\"><label class=\"ds-slider-row__label\" for=\"ds-st-exposure\">Exposure</label><input class=\"ds-slider-row__input\" id=\"ds-st-exposure\" type=\"range\" min=\"-2\" max=\"2\" step=\"0.05\" value=\"0.35\" /><span class=\"ds-slider-row__value\">+0.35</span></div>",
+      "css": ".ds-slider-row { display: grid; grid-template-columns: 120px 1fr 56px; align-items: center; gap: 14px; padding: 4px 0; } .ds-slider-row__label { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 400; letter-spacing: 0.06em; text-transform: uppercase; color: oklch(0.78 0.01 70); } .ds-slider-row__input { -webkit-appearance: none; appearance: none; width: 100%; height: 2px; border-radius: 1px; background: linear-gradient(90deg, oklch(0.82 0.19 70) 0%, oklch(0.78 0.22 350) 100%); cursor: pointer; } .ds-slider-row__input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: oklch(0.96 0.008 75); border: 1px solid oklch(0.96 0.008 75); box-shadow: 0 0 16px oklch(0.82 0.19 70 / 0.5); cursor: grab; transition: box-shadow 200ms ease; } .ds-slider-row:hover .ds-slider-row__input::-webkit-slider-thumb { box-shadow: 0 0 24px oklch(0.82 0.19 70 / 0.6), 0 0 48px oklch(0.82 0.19 70 / 0.2); } .ds-slider-row__value { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; font-weight: 400; text-align: right; font-variant-numeric: tabular-nums; color: oklch(0.78 0.01 70); }"
+    },
+    {
+      "name": "Pipeline Stage (Output)",
+      "kind": "card",
+      "refersTo": "pipeline-stage-output",
+      "description": "Output stage in the conversion pipeline. The accent-bordered destination cell.",
+      "html": "<div class=\"ds-pipeline-stage ds-pipeline-stage--output\"><span class=\"ds-pipeline-stage__title\">HDR PNG</span><span class=\"ds-pipeline-stage__detail\">PQ · Rec.2020 · cICP</span></div>",
+      "css": ".ds-pipeline-stage { display: inline-flex; flex-direction: column; gap: 6px; background: oklch(0.16 0.01 55 / 0.6); border: 1px solid oklch(0.28 0.012 55); border-radius: 6px; padding: 14px 16px; color: oklch(0.96 0.008 75); } .ds-pipeline-stage--output { background: oklch(0.82 0.19 70 / 0.15); border-color: oklch(0.82 0.19 70); } .ds-pipeline-stage__title { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 14px; font-weight: 500; } .ds-pipeline-stage__detail { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.14em; text-transform: uppercase; color: oklch(0.55 0.012 65); }"
+    },
+    {
+      "name": "Compat Card (Full Support)",
+      "kind": "card",
+      "refersTo": "compat-card-full",
+      "description": "Compatibility matrix entry. Lime variant signals full HDR support paired with a checkmark.",
+      "html": "<div class=\"ds-compat-card ds-compat-card--full\"><span class=\"ds-compat-card__status\" aria-hidden=\"true\"><svg viewBox=\"0 0 16 16\" width=\"16\" height=\"16\"><path d=\"M3.5 8.5l3 3 6-6.5\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></span><span class=\"ds-compat-card__name\">iMessage</span><span class=\"ds-compat-card__detail\">Full HDR pass-through</span></div>",
+      "css": ".ds-compat-card { display: flex; flex-direction: column; align-items: center; gap: 10px; background: oklch(0.14 0.01 55 / 0.4); border: 1px solid oklch(0.28 0.012 55); border-radius: 6px; padding: 18px 14px; color: oklch(0.96 0.008 75); text-align: center; } .ds-compat-card__status { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 50%; background: oklch(0.88 0.2 130 / 0.18); color: oklch(0.88 0.2 130); box-shadow: 0 0 14px oklch(0.88 0.2 130 / 0.4); } .ds-compat-card__name { font-family: 'Space Grotesk', system-ui, sans-serif; font-size: 14px; font-weight: 500; } .ds-compat-card__detail { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; font-weight: 400; letter-spacing: 0.12em; text-transform: uppercase; color: oklch(0.55 0.012 65); }"
+    },
+    {
+      "name": "Chromatic Title (Signature)",
+      "kind": "custom",
+      "refersTo": "chromatic-title",
+      "description": "The page's signature gesture. Three layered spans simulate prism dispersion.",
+      "html": "<h1 class=\"ds-chromatic-title\"><span class=\"ds-chromatic-title__layer ds-chromatic-title__layer--cyan\" aria-hidden=\"true\">HDR is here.</span><span class=\"ds-chromatic-title__layer ds-chromatic-title__layer--pink\" aria-hidden=\"true\">HDR is here.</span><span class=\"ds-chromatic-title__layer ds-chromatic-title__layer--main\">HDR is here.</span></h1>",
+      "css": ".ds-chromatic-title { position: relative; font-family: 'Space Grotesk', system-ui, sans-serif; font-size: clamp(48px, 7vw, 96px); font-weight: 500; line-height: 0.95; letter-spacing: -0.04em; color: oklch(0.96 0.008 75); margin: 0; } .ds-chromatic-title__layer { display: block; } .ds-chromatic-title__layer--cyan, .ds-chromatic-title__layer--pink { position: absolute; inset: 0; opacity: 0.3; mix-blend-mode: screen; pointer-events: none; } .ds-chromatic-title__layer--cyan { color: oklch(0.84 0.16 210); transform: translate(-3px, 1px); } .ds-chromatic-title__layer--pink { color: oklch(0.78 0.22 350); transform: translate(3px, -1px); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Prism in the Dark",
+    "overview": "Supernova is a single-purpose HDR converter dressed as a piece of optical equipment in a dim warm room. The page is a near-black surface tinted toward amber, lit from within by a slow plasma drift; on top of it sits a chromatic-aberration title, six matched spectral hues, and a pair of warmly glowing controls. The visual language behaves like the thing it encodes: color is the subject, not decoration. When you push the Boost slider, the preview reaches into headroom your monitor may not be able to fully render, and the interface holds the same posture: more saturated than it strictly needs to be, with a confidence that doesn't apologize.\n\nThis system explicitly rejects three reflexes. It is not a SaaS product page. It is not a generic dev-tool utility. It is not a 'fun' site that screams fun. Mischief is delivered through restraint plus one committed gesture, never through novelty pile-on. If you can guess the aesthetic from the category alone, the design has failed; Supernova is neither grey-utility nor AI-gradient-mesh.",
+    "keyCharacteristics": [
+      "Warm near-black surface (~oklch(0.12 0.008 60)), never #000. Every neutral is tinted toward the brand hue.",
+      "Six spectral accents at matched chroma (~0.16–0.22) and lightness (~0.78–0.88). Hue varies; perceptual weight does not.",
+      "Chromatic aberration as signature gesture: cyan/pink offsets on the hero title, amber dot on the brand mark, bloom drift on the after preview.",
+      "Two-tier control hierarchy. Boost and Saturation are dominant; eight fine-tune sliders are a quiet uniform grid below.",
+      "Ambient motion, never ornament. Plasma drifts and lenses around the cursor; bloom drifts; processing scan-bar sweeps. All disabled under prefers-reduced-motion and when off-screen.",
+      "Pure CSS, BEM-ish naming, no preprocessor, no utility framework, no icon library. One file per surface concern under src/styles/."
+    ],
+    "rules": [
+      {
+        "name": "The Single-Accent Reskin Rule",
+        "section": "colors",
+        "body": "Components read --accent and --accent-dim; they never hardcode --spec-amber or any other spectral token. A subtree can be themed in one place by overriding those two variables. Forking component CSS to recolor is forbidden."
+      },
+      {
+        "name": "The Matched-Chroma Rule",
+        "section": "colors",
+        "body": "Every spectral accent sits at L ≈ 0.78–0.88 and C ≈ 0.16–0.22. New decorative hues must enter at the same perceptual weight or they will clash with the existing six."
+      },
+      {
+        "name": "The Tinted-Neutral Rule",
+        "section": "colors",
+        "body": "No #000, no #fff. Neutrals are warm-biased toward hue 55–75 with chroma 0.008–0.012. The single exception is #0a0a0a for ink-on-accent, which is intentional and singular."
+      },
+      {
+        "name": "The Color-Plus-Glyph Rule",
+        "section": "colors",
+        "body": "Color is never the only signal for state. Success carries a checkmark, error carries an icon and copy, pipeline output carries a label. A color-blind visitor must be able to operate every control without distinguishing hues."
+      },
+      {
+        "name": "The Mono-For-Metadata Rule",
+        "section": "typography",
+        "body": "Anything uppercase with letter-spacing ≥0.06em is JetBrains Mono. Anything full-sentence prose is Inter. Anything a user reads as a numeric value is Space Grotesk. Mixing roles is forbidden."
+      },
+      {
+        "name": "The Tabular-Numerics Rule",
+        "section": "typography",
+        "body": "Any numeric that updates live (slider values, peak nits, histogram readouts) carries font-variant-numeric: tabular-nums so digits don't jitter as values change."
+      },
+      {
+        "name": "The Up-The-Scale-For-Emphasis Rule",
+        "section": "typography",
+        "body": "Don't lower --ink-3 or --ink-4 to mute. Don't raise saturation to emphasize. Move up the ink scale (--ink-3 → --ink-2 → --ink) and bump weight or size. The ink scale is for de-emphasis only."
+      },
+      {
+        "name": "The Glow-Not-Drop-Shadow Rule",
+        "section": "elevation",
+        "body": "When a surface needs to feel raised, use an outer accent halo or an inset highlight. Reaching for a downward-offset drop-shadow re-introduces the SaaS-card aesthetic Supernova explicitly rejects. Two named exceptions exist and may not be extended: the slider thumb's single warm grounding shadow (paired with a halo) and the .preview-frame grounding shadow (0 30px 80px oklch(0 0 0 / 0.5)), which lifts the floating preview off the plasma field on the largest visual frame on the page."
+      },
+      {
+        "name": "The Glassmorphism-As-Tool Rule",
+        "section": "elevation",
+        "body": "Glass surfaces (backdrop-filter: blur(...)) appear only where content sits behind the surface and must read through. Six current sites: drop-button background (hero.css), controls panel (controls.css), compare label (preview.css), compare-mode-switch (preview.css), drag-knob (preview.css), processing-overlay (preview.css). Decorative glass is forbidden."
+      }
+    ],
+    "dos": [
+      "Do read --accent and --accent-dim instead of hardcoding --spec-amber. A subtree must be reskinnable in two var overrides.",
+      "Do pass every fine-tune control through .slider-row's 120px / 1fr / 56px grid. Track alignment across labels is the entire point of the grid.",
+      "Do pair color signals with a glyph or copy. Compat Lime success carries a checkmark; Spectral Red error carries an icon and copy.",
+      "Do disable decorative animation under prefers-reduced-motion: reduce. The two existing exceptions (.hdr-bloom, .scan-bar) are disabled outright via animation: none.",
+      "Do reach for the existing primitive before authoring a new one. Compare, drop, peak readout, pipeline stage, compat card are the named affordances. Importing them is the rule.",
+      "Do keep 1px borders for default state and reserve thicker rings for focus-visible (2px solid accent at 2px offset on buttons; 8px offset on the drop zone)."
+    ],
+    "donts": [
+      "Don't use #000 or #fff. Tint every neutral toward the brand hue (chroma 0.008–0.012). The single hex exception is #0a0a0a for ink-on-accent.",
+      "Don't introduce a third control tier. Boost and Saturation are hero; the eight named look controls are fine-tune; everything else fits one of those two grids or it doesn't ship.",
+      "Don't stack glassmorphism for decoration. Glass surfaces appear only where content sits behind them and needs to be partially seen. Five-layer glass stacks are explicitly named in PRODUCT.md as a 'screams fun' anti-pattern.",
+      "Don't write a SaaS product page. No three-column feature grid, no 'Trusted by teams at...', no testimonial quotes, no gradient-on-cream 'Get started' button, no stock-photo mockup hero.",
+      "Don't dress this as a generic dev-tool utility. No Bootstrap-grey chrome, no boxed file input, no logo grid of supported formats, no 'Drag & drop or click to upload' body-grey-on-white.",
+      "Don't lean on tilted-neon, Memphis stickers, Comic Sans, or rotated polaroid clusters to signal playfulness. Mischief comes from one committed gesture, not from pile-on novelty.",
+      "Don't introduce a new z-index band without amending DESIGN_SYSTEM.md §4.6. The current bands are deliberate.",
+      "Don't add an icon library, CSS-in-JS, Sass, PostCSS preprocessing, or a utility framework. Pure CSS with @import, BEM-ish naming, custom inline SVG only.",
+      "Don't use side-stripe border-left greater than 1px as a colored accent on a card or alert. If a row needs to read as state, use a full border, a tinted background, or a leading icon.",
+      "Don't write gradient text via background-clip: text. Hierarchy is built from scale, weight, and a single solid color.",
+      "Don't brag about privacy. The privacy ribbon is small, mono, and quiet. 'No uploads, no analytics' lives there once and never appears as a hero claim.",
+      "Don't drop the bar on secondary surfaces. The 404 and How It Works get the same craft attention as the converter.",
+      "Don't use em dashes or '--' in copy. Use commas, colons, semicolons, periods, or parentheses."
+    ]
+  }
+}
