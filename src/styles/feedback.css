@@ -1,6 +1,9 @@
 /* Page-level feedback: error banner + privacy ribbon footer. */
 
 .error-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   margin: 16px 0;
   padding: 12px 16px;
   background: oklch(0.2 0.08 25 / 0.3);
@@ -10,6 +13,36 @@
   font-size: 11px;
   letter-spacing: 0.06em;
   color: oklch(0.85 0.1 25);
+}
+
+.error-banner__icon {
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: oklch(0.85 0.1 25);
+}
+
+.error-banner__message {
+  flex: 1 1 auto;
+  align-self: center;
+  line-height: 1.55;
+}
+
+.error-banner--crash {
+  align-items: flex-start;
+}
+
+.error-banner__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.error-banner__detail {
+  color: oklch(0.78 0.06 25);
 }
 
 .privacy-ribbon {

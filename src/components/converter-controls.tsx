@@ -43,8 +43,14 @@ const CONTROL_ID_OVERRIDES: Partial<Record<LookControlKey, string>> = {
 
 function downloadButtonLabel(processing: boolean, downloaded: boolean): string {
   if (processing) return 'Converting...'
-  if (downloaded) return 'Downloaded!'
+  if (downloaded) return 'Downloaded'
   return 'Download HDR PNG'
+}
+
+function downloadButtonGlyph(processing: boolean, downloaded: boolean): string {
+  if (processing) return '↓'
+  if (downloaded) return '✓'
+  return '↓'
 }
 
 function camelToWords(key: string): string {
@@ -250,7 +256,7 @@ export function ConverterControls({
           onClick={onConvert}
           disabled={processing}
         >
-          {downloadButtonLabel(processing, downloaded)} <span aria-hidden="true">↓</span>
+          {downloadButtonLabel(processing, downloaded)} <span aria-hidden="true">{downloadButtonGlyph(processing, downloaded)}</span>
         </button>
       </div>
 
