@@ -1,5 +1,13 @@
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks'
 import { BOOST_UI_MAX, BOOST_UI_MIN, boostToTargetNits } from '../lib/hdr-boost'
-import { LOOK_CONTROL_KEYS, LOOK_CONTROL_RANGES, type LookControls } from '../lib/look-controls'
+import {
+  LOOK_CONTROL_GROUPS,
+  LOOK_CONTROL_RANGES,
+  LOOK_CONTROL_RENDER_META,
+  saturationSubLabel,
+  type LookControlKey,
+  type LookControls,
+} from '../lib/look-controls'
 
 interface ConverterControlsProps {
   imageName: string
@@ -16,45 +24,10 @@ interface ConverterControlsProps {
   onConvert: () => void
 }
 
-type LookControlKey = keyof LookControls
-
-const PRIMARY_CONTROL_KEYS: LookControlKey[] = ['saturation']
-const SPEC_FINE_TUNE_KEYS: LookControlKey[] = [
-  'exposure',
-  'temperature',
-  'tint',
-  'gamma',
-  'contrast',
-  'highlightRollOff',
-  'shadowLift',
-  'vibrance',
-]
-const ADVANCED_FINE_TUNE_KEYS: LookControlKey[] = ['blacks', 'whites', 'clarity', 'highlightSaturation', 'shadowGlow']
-
-const KNOWN_CONTROL_KEY_SET = new Set<LookControlKey>([...PRIMARY_CONTROL_KEYS, ...SPEC_FINE_TUNE_KEYS, ...ADVANCED_FINE_TUNE_KEYS])
-
-const ADVANCED_FINE_TUNE_KEYS_RESOLVED: LookControlKey[] = [
-  ...ADVANCED_FINE_TUNE_KEYS,
-  ...LOOK_CONTROL_KEYS.filter((key) => !KNOWN_CONTROL_KEY_SET.has(key)),
-]
-
-const SIGNED_CONTROL_KEYS = new Set<LookControlKey>(['exposure', 'temperature', 'tint', 'blacks', 'whites', 'clarity'])
-
-const CONTROL_DECIMAL_OVERRIDES: Partial<Record<LookControlKey, number>> = {
-  exposure: 1,
-  gamma: 1,
-}
-
-const CONTROL_LABEL_OVERRIDES: Partial<Record<LookControlKey, string>> = {
-  highlightRollOff: 'Highlight Roll-off',
-  highlightSaturation: 'Highlight Sat',
-  shadowLift: 'Shadow Lift',
-  shadowGlow: 'Shadow Glow',
-}
-
-const CONTROL_ID_OVERRIDES: Partial<Record<LookControlKey, string>> = {
-  highlightRollOff: 'rolloff-range',
-  shadowLift: 'shadow-range',
+interface ScrollState {
+  canScroll: boolean
+  atTop: boolean
+  atBottom: boolean
 }
 
 function downloadButtonLabel(processing: boolean, downloaded: boolean): string {
@@ -69,29 +42,8 @@ function downloadButtonGlyph(processing: boolean, downloaded: boolean): string {
   return '↓'
 }
 
-function camelToWords(key: string): string {
-  return key.replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-}
-
-function kebabCase(key: string): string {
-  return key
-    .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
-    .replace(/\s+/g, '-')
-    .toLowerCase()
-}
-
-function controlId(key: LookControlKey): string {
-  return CONTROL_ID_OVERRIDES[key] ?? `${kebabCase(key)}-range`
-}
-
-function controlLabel(key: LookControlKey): string {
-  if (CONTROL_LABEL_OVERRIDES[key]) return CONTROL_LABEL_OVERRIDES[key] as string
-  const normalized = camelToWords(key)
-  return `${normalized.slice(0, 1).toUpperCase()}${normalized.slice(1)}`
-}
-
-function controlDecimals(key: LookControlKey): number {
-  return CONTROL_DECIMAL_OVERRIDES[key] ?? 2
+function downloadReceiptMeta(boost: number): string {
+  return `PQ · Rec.2020 · ${Math.round(boostToTargetNits(boost)).toLocaleString()} nits peak`
 }
 
 function HeroSlider(props: {
@@ -178,12 +130,6 @@ function Slider(props: {
   )
 }
 
-function saturationSubLabel(value: number): string {
-  if (value > 1.3) return 'Wide gamut'
-  if (value > 1.1) return 'Enhanced'
-  return 'Natural'
-}
-
 export function ConverterControls({
   imageName,
   imageWidth,
@@ -198,20 +144,70 @@ export function ConverterControls({
   onReset,
   onConvert,
 }: ConverterControlsProps) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [scrollState, setScrollState] = useState<ScrollState>({
+    canScroll: false,
+    atTop: true,
+    atBottom: true,
+  })
+
+  const updateScrollState = useCallback(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+
+    const scrollMax = scrollElement.scrollHeight - scrollElement.clientHeight
+    const canScroll = scrollMax > 2
+    const nextState = {
+      canScroll,
+      atTop: scrollElement.scrollTop <= 2,
+      atBottom: !canScroll || scrollElement.scrollTop >= scrollMax - 2,
+    }
+
+    setScrollState((current) =>
+      current.canScroll === nextState.canScroll && current.atTop === nextState.atTop && current.atBottom === nextState.atBottom
+        ? current
+        : nextState,
+    )
+  }, [])
+
+  const queueScrollStateUpdate = useCallback(() => {
+    requestAnimationFrame(updateScrollState)
+  }, [updateScrollState])
+
+  useEffect(() => {
+    const scrollElement = scrollRef.current
+    if (!scrollElement) return
+
+    updateScrollState()
+
+    const resizeObserver = new ResizeObserver(updateScrollState)
+    resizeObserver.observe(scrollElement)
+
+    scrollElement.addEventListener('scroll', updateScrollState, { passive: true })
+    window.addEventListener('resize', updateScrollState)
+
+    return () => {
+      resizeObserver.disconnect()
+      scrollElement.removeEventListener('scroll', updateScrollState)
+      window.removeEventListener('resize', updateScrollState)
+    }
+  }, [updateScrollState])
+
   const renderLookControl = (key: LookControlKey) => {
     const range = LOOK_CONTROL_RANGES[key]
+    const meta = LOOK_CONTROL_RENDER_META[key]
     const value = lookControls[key]
     return (
       <Slider
         key={key}
-        id={controlId(key)}
-        label={controlLabel(key)}
+        id={meta.id}
+        label={meta.label}
         min={range.min}
         max={range.max}
         step={range.step}
         value={value}
-        displayValue={value.toFixed(controlDecimals(key))}
-        centered={SIGNED_CONTROL_KEYS.has(key)}
+        displayValue={value.toFixed(meta.decimals)}
+        centered={meta.centered}
         onInput={(nextValue) => onSetLookControl(key, nextValue)}
       />
     )
@@ -231,65 +227,102 @@ export function ConverterControls({
           display={`${boost.toFixed(1)}×`}
           sub={`${Math.round(boostToTargetNits(boost)).toLocaleString()} nits peak`}
         />
-        {PRIMARY_CONTROL_KEYS.map((key) => {
+        {LOOK_CONTROL_GROUPS.primary.map((key) => {
           const range = LOOK_CONTROL_RANGES[key]
+          const meta = LOOK_CONTROL_RENDER_META[key]
           const value = lookControls[key]
           return (
             <HeroSlider
               key={key}
-              id={controlId(key)}
-              label={controlLabel(key)}
+              id={meta.id}
+              label={meta.label}
               min={range.min}
               max={range.max}
               step={range.step}
               value={value}
               onInput={(nextValue) => onSetLookControl(key, nextValue)}
-              display={value.toFixed(2)}
+              display={value.toFixed(meta.decimals)}
               sub={saturationSubLabel(value)}
             />
           )
         })}
       </div>
 
-      <div class="fine-tune">{SPEC_FINE_TUNE_KEYS.map(renderLookControl)}</div>
+      <div
+        class={`controls-panel__scroll-shell${scrollState.canScroll ? ' is-scrollable' : ''}${
+          !scrollState.atTop ? ' is-scrolled' : ''
+        }${!scrollState.atBottom ? ' has-more-below' : ''}`}
+      >
+        <div ref={scrollRef} class="controls-panel__scroll">
+          <details class="fine-tune-group" onToggle={queueScrollStateUpdate}>
+            <summary class="fine-tune-group__summary">
+              <span class="fine-tune-group__label">Tune image</span>
+              <span class="fine-tune-group__hint">{LOOK_CONTROL_GROUPS.specFineTune.length} controls</span>
+              <span class="fine-tune-group__chevron" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <div class="fine-tune fine-tune-group__grid">{LOOK_CONTROL_GROUPS.specFineTune.map(renderLookControl)}</div>
+          </details>
 
-      <details class="advanced-fine-tune">
-        <summary class="advanced-fine-tune__summary">
-          <span class="advanced-fine-tune__label">Advanced</span>
-          <span class="advanced-fine-tune__chevron" aria-hidden="true">
-            +
+          <details class="advanced-fine-tune" onToggle={queueScrollStateUpdate}>
+            <summary class="advanced-fine-tune__summary">
+              <span class="advanced-fine-tune__label">Advanced</span>
+              <span class="advanced-fine-tune__chevron" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <div class="fine-tune advanced-fine-tune__grid">{LOOK_CONTROL_GROUPS.advanced.map(renderLookControl)}</div>
+          </details>
+        </div>
+        <span class="controls-panel__scroll-cue controls-panel__scroll-cue--top" aria-hidden="true" />
+        <span class="controls-panel__scroll-cue controls-panel__scroll-cue--bottom" aria-hidden="true" />
+      </div>
+
+      <div class="controls-panel__footer">
+        <div class="preview-note">
+          <span class="preview-note__heading">
+            <span aria-hidden="true">✦</span> Export · {hdrPreviewEnabled ? 'HDR preview' : 'HDR output'}
           </span>
-        </summary>
-        <div class="fine-tune advanced-fine-tune__grid">{ADVANCED_FINE_TUNE_KEYS_RESOLVED.map(renderLookControl)}</div>
-      </details>
+          {hdrPreviewEnabled
+            ? 'This display can show the HDR preview. The download keeps the same headroom.'
+            : 'The download is HDR even if this preview looks normal on your display.'}
+        </div>
 
-      <div class="preview-note">
-        <span class="preview-note__heading">
-          <span aria-hidden="true">✦</span> Preview · {hdrPreviewEnabled ? 'HDR direct' : 'SDR approximation'}
-        </span>
-        {hdrPreviewEnabled
-          ? 'Preview is using converted HDR PNG output on this browser/display.'
-          : 'HDR encoded at export. Boost affects final output even if your display can’t render it.'}
-      </div>
+        <div class="btn-row">
+          <button type="button" class="btn btn-secondary" onClick={onReset}>
+            <span aria-hidden="true">←</span> New image
+          </button>
+          <button
+            type="button"
+            class={`btn btn-download${downloaded ? ' btn-download--success' : ''}`}
+            onClick={onConvert}
+            disabled={processing}
+          >
+            <span class="btn-download__label">{downloadButtonLabel(processing, downloaded)}</span>
+            <span class="btn-download__glyph" aria-hidden="true">
+              {downloadButtonGlyph(processing, downloaded)}
+            </span>
+          </button>
+        </div>
 
-      <div class="btn-row">
-        <button type="button" class="btn btn-secondary" onClick={onReset}>
-          <span aria-hidden="true">←</span> New image
-        </button>
-        <button
-          type="button"
-          class={`btn btn-download${downloaded ? ' btn-download--success' : ''}`}
-          onClick={onConvert}
-          disabled={processing}
-        >
-          {downloadButtonLabel(processing, downloaded)} <span aria-hidden="true">{downloadButtonGlyph(processing, downloaded)}</span>
-        </button>
-      </div>
+        {downloaded && (
+          <div class="download-receipt" role="status" aria-live="polite">
+            <span class="download-receipt__flare" aria-hidden="true">
+              <span class="download-receipt__core">✓</span>
+            </span>
+            <span class="download-receipt__copy">
+              <span class="download-receipt__label">HDR payload saved</span>
+              <span class="download-receipt__meta">{downloadReceiptMeta(boost)}</span>
+            </span>
+          </div>
+        )}
 
-      <div class="filename" aria-label={`${imageName}, ${imageWidth} by ${imageHeight} pixels`}>
-        <span aria-hidden="true">
-          {imageName} · {imageWidth}×{imageHeight}
-        </span>
+        <div class="filename" aria-label={`${imageName}, ${imageWidth} by ${imageHeight} pixels`}>
+          <span aria-hidden="true">
+            {imageName} · {imageWidth}×{imageHeight}
+          </span>
+        </div>
       </div>
     </div>
   )
