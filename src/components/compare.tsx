@@ -102,16 +102,16 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
     // Keep both mounted so Playwright fingerprint always finds the after cell.
     return (
       <div class="compare compare--swap">
-        <div class="compare__cell compare__cell--before" hidden={showAfter}>
+        <figure class="preview-panel compare__cell compare__cell--before" hidden={showAfter}>
+          <figcaption class="compare__label">Before · SDR</figcaption>
           <BeforeImage src={beforeSrc} alt={beforeAlt} />
-          <div class="compare__label">Before · SDR</div>
-        </div>
-        <div class="compare__cell compare__cell--after" hidden={!showAfter}>
+        </figure>
+        <figure class="preview-panel compare__cell compare__cell--after" hidden={!showAfter}>
+          <figcaption class="compare__label compare__label--after">After · HDR · PQ</figcaption>
           <AfterImage previewImageSrc={previewImageSrc} previewCanvasRef={previewCanvasRef} previewReady={previewReady} />
           <div class="hdr-bloom" aria-hidden="true" />
-          <div class="compare__label compare__label--after">After · HDR · PQ</div>
-        </div>
-        <div class="compare-mode-switch" role="tablist" aria-label="Swap before and after">
+        </figure>
+        <div class="compare-mode-switch" role="group" aria-label="Swap before and after">
           <button
             type="button"
             class={`compare-mode-switch__btn${!showAfter ? ' compare-mode-switch__btn--active' : ''}`}
@@ -133,6 +133,25 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
     )
   }
 
+  const onKnobKeyDown = (event: KeyboardEvent) => {
+    const step = event.shiftKey ? 10 : 2
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      setDragPct((current) => clamp(current - step, 0, 100))
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      setDragPct((current) => clamp(current + step, 0, 100))
+    } else if (event.key === 'Home') {
+      event.preventDefault()
+      setDragPct(0)
+    } else if (event.key === 'End') {
+      event.preventDefault()
+      setDragPct(100)
+    }
+  }
+
+  const dragRounded = Math.round(dragPct)
+
   // drag — both cells are absolutely positioned over the same frame and
   // clipped to mutually exclusive horizontal halves separated by the handle,
   // so neither can bleed into the other's side at any handle position.
@@ -151,17 +170,29 @@ export function Compare({ mode, beforeSrc, beforeAlt, previewImageSrc, previewCa
         handleDrag(event)
       }}
     >
-      <div class="compare__cell compare__cell--before compare__cell--drag-cell" style={{ clipPath: `inset(0 ${100 - dragPct}% 0 0)` }}>
+      <figure class="compare__cell compare__cell--before compare__cell--drag-cell" style={{ clipPath: `inset(0 ${100 - dragPct}% 0 0)` }}>
+        <figcaption class="compare__label">Before · SDR</figcaption>
         <BeforeImage src={beforeSrc} alt={beforeAlt} />
-        <div class="compare__label">Before · SDR</div>
-      </div>
-      <div class="compare__cell compare__cell--after compare__cell--drag-cell" style={{ clipPath: `inset(0 0 0 ${dragPct}%)` }}>
+      </figure>
+      <figure class="compare__cell compare__cell--after compare__cell--drag-cell" style={{ clipPath: `inset(0 0 0 ${dragPct}%)` }}>
+        <figcaption class="compare__label compare__label--after">After · HDR · PQ</figcaption>
         <AfterImage previewImageSrc={previewImageSrc} previewCanvasRef={previewCanvasRef} previewReady={previewReady} />
         <div class="hdr-bloom" aria-hidden="true" />
-        <div class="compare__label compare__label--after">After · HDR · PQ</div>
-      </div>
-      <div class="compare-handle" style={{ left: `${dragPct}%` }} aria-hidden="true">
-        <div class="compare-handle__knob">⇄</div>
+      </figure>
+      <div class="compare-handle" style={{ left: `${dragPct}%` }}>
+        <div
+          class="compare-handle__knob"
+          role="slider"
+          tabIndex={0}
+          aria-label="Compare reveal"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={dragRounded}
+          aria-valuetext={`Reveal ${dragRounded} percent after`}
+          onKeyDown={onKnobKeyDown}
+        >
+          <span aria-hidden="true">⇄</span>
+        </div>
       </div>
     </div>
   )

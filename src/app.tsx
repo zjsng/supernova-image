@@ -2,7 +2,7 @@ import { ErrorBoundary, LocationProvider, Route, Router, lazy, useLocation } fro
 import { GUIDE_SEO_ROUTES, SEO_ROUTE_BY_ROUTER_PATH } from './lib/seo-routes'
 import { AppErrorBoundary } from './components/app-error-boundary'
 import { Home } from './routes/home'
-import { HOME_ROUTE, HOW_IT_WORKS_ROUTE, NOT_FOUND_ROUTE } from './routes/shared'
+import { GuideLinksInline, HOME_ROUTE, HOW_IT_WORKS_ROUTE, NOT_FOUND_ROUTE } from './routes/shared'
 
 const HowItWorks = lazy(() => import('./routes/how-it-works').then((m) => m.HowItWorks))
 const NotFound = lazy(() => import('./routes/not-found').then((m) => m.NotFound))
@@ -55,14 +55,6 @@ function Header() {
             {brandContent}
           </a>
         )}
-        {isHome && (
-          <h1 class="header__tagline">
-            <span class="header__tagline-sep" aria-hidden="true">
-              ·
-            </span>
-            HDR PNG Converter
-          </h1>
-        )}
       </div>
       <nav class="header__nav" aria-label="Primary">
         <a class="header__nav-link how-link" href={HOW_IT_WORKS_ROUTE.routerPath}>
@@ -74,10 +66,25 @@ function Header() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          GitHub ↗
+          GitHub <span aria-hidden="true">↗</span>
         </a>
       </nav>
     </header>
+  )
+}
+
+function PrivacyRibbon() {
+  return (
+    <footer class="privacy-ribbon">
+      <div class="privacy-ribbon__left">
+        <span class="privacy-ribbon__title">Supernova · client-side HDR PNG</span>
+        <span class="privacy-ribbon__tagline">No uploads · no telemetry · no cookies</span>
+      </div>
+      <nav class="privacy-ribbon__guides" aria-label="Popular guides">
+        <span class="privacy-ribbon__guides-label">Guides</span>
+        <GuideLinksInline />
+      </nav>
+    </footer>
   )
 }
 
@@ -85,9 +92,12 @@ export function App() {
   return (
     <AppErrorBoundary>
       <LocationProvider>
+        <a class="skip-link" href="#main">
+          Skip to main content
+        </a>
         <Header />
         <ErrorBoundary>
-          <main>
+          <main id="main" tabIndex={-1}>
             <Router>
               <Route path={HOME_ROUTE.routerPath} component={Home} />
               <Route path={HOW_IT_WORKS_ROUTE.routerPath} component={HowItWorks} />
@@ -99,6 +109,7 @@ export function App() {
             </Router>
           </main>
         </ErrorBoundary>
+        <PrivacyRibbon />
       </LocationProvider>
     </AppErrorBoundary>
   )

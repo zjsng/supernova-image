@@ -112,17 +112,6 @@
     gap: 14px;
   }
 
-  .header__tagline {
-    position: absolute !important;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    border: 0;
-  }
-
   .peak-readout {
     grid-template-columns: 1fr;
     gap: 8px;

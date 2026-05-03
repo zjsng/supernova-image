@@ -96,5 +96,5 @@
   font-size: 9.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
 }

@@ -257,7 +257,7 @@
 
 .nits-row-val {
   text-align: right;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
   font-variant-numeric: tabular-nums;
 }
 
@@ -360,7 +360,7 @@
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
 }
 
 /* Reveal animation (used by RevealSection) */

@@ -39,7 +39,7 @@ async function waitForPreviewReady(page: Page): Promise<string> {
 
 test('core routes render expected content', async ({ page }) => {
   await page.goto('./')
-  await expect(page.getByRole('heading', { name: 'HDR PNG Converter' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: /Drop an image/ })).toBeVisible()
 
   await page.goto('how-it-works')
   await expect(page.getByRole('heading', { name: 'How HDR PNG Conversion Works' })).toBeVisible()
@@ -78,4 +78,36 @@ test('upload, preview update, and download flow works', async ({ page }) => {
 
   const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download HDR PNG' }).click()])
   expect(download.suggestedFilename()).toMatch(/-hdr\.png$/)
+})
+
+test('drag-mode compare handle is keyboard operable', async ({ page }) => {
+  await page.goto('./')
+
+  const fileInput = page.locator('input[type="file"]')
+  await fileInput.setInputFiles(fixturePath)
+  await expect(page.locator('.filename')).toContainText('test.png', { timeout: 15_000 })
+  await waitForPreviewReady(page)
+
+  await page.getByRole('button', { name: 'Drag' }).click()
+
+  const knob = page.getByRole('slider', { name: 'Compare reveal' })
+  await expect(knob).toHaveAttribute('aria-valuenow', '50')
+
+  await knob.focus()
+
+  await page.keyboard.press('End')
+  await expect(knob).toHaveAttribute('aria-valuenow', '100')
+
+  await page.keyboard.press('Home')
+  await expect(knob).toHaveAttribute('aria-valuenow', '0')
+
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.press('ArrowRight')
+  await expect(knob).toHaveAttribute('aria-valuenow', '6')
+
+  await page.keyboard.down('Shift')
+  await page.keyboard.press('ArrowRight')
+  await page.keyboard.up('Shift')
+  await expect(knob).toHaveAttribute('aria-valuenow', '16')
 })

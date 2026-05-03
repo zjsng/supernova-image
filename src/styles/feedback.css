@@ -45,7 +45,7 @@
 }
 
 .privacy-ribbon__tagline {
-  color: var(--ink-4);
+  color: var(--ink-text-min);
 }
 
 .privacy-ribbon__guides {

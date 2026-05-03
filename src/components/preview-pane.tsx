@@ -64,12 +64,13 @@ function PeakReadout({ boost, exposure }: { boost: number; exposure: number }) {
           const t = index / (bars.length - 1)
           const hue = 240 - t * 220
           const isHdr = t > 0.75 && boost > 2
+          const scale = Math.max(0.04, value)
           return (
             <span
               key={index}
               class="peak-readout__bar"
               style={{
-                height: `${Math.max(4, value * 100)}%`,
+                transform: `scaleY(${scale})`,
                 background: isHdr ? `oklch(0.75 0.2 ${hue})` : `oklch(0.5 0.08 ${hue})`,
                 opacity: isHdr ? 1 : 0.7,
                 boxShadow: isHdr ? `0 0 6px oklch(0.7 0.2 ${hue} / 0.5)` : 'none',
@@ -131,7 +132,7 @@ export function PreviewPane({
         <div class="drop-zone__overlay" aria-hidden="true" />
         <div class="drop-zone__inner">
           <span class="hero__eyebrow">In-browser · Local · Open-source</span>
-          <ChromaticTitle lines={['Drop an image.', 'Get HDR back.']} accentLine={1} />
+          <ChromaticTitle as="h1" lines={['Drop an image.', 'Get HDR back.']} accentLine={1} />
           <p class="hero__subhead">
             PNG, JPEG, WebP, or AVIF in. True HDR PNG with PQ transfer and Rec.2020 gamut out — entirely in your browser. Nothing uploads.
           </p>
@@ -145,28 +146,32 @@ export function PreviewPane({
             </span>
           </span>
         </div>
-        <input type="file" ref={fileInputRef} accept="image/*" onChange={onFileSelect} />
+        <input type="file" ref={fileInputRef} accept="image/*" tabIndex={-1} onChange={onFileSelect} />
       </div>
     )
   }
 
-  const dimensionLabel = `${imageWidth ?? image.width} × ${imageHeight ?? image.height}`
+  const widthValue = imageWidth ?? image.width
+  const heightValue = imageHeight ?? image.height
+  const isBusy = processing || previewPending
+  const busyLabel = processing ? 'Converting' : 'Updating Preview'
 
   return (
     <div class="preview-column">
       <div class="preview-header">
         <div class="preview-header__name">{imageName ?? 'image'}</div>
         <div class="preview-header__meta">
-          <span>{dimensionLabel}</span>
-          <div class="preview-mode-picker" role="tablist" aria-label="Compare mode">
+          <span aria-label={`${widthValue} by ${heightValue} pixels`}>
+            {widthValue} <span aria-hidden="true">×</span> {heightValue}
+          </span>
+          <div class="preview-mode-picker" role="group" aria-label="Compare mode">
             {COMPARE_MODES.map((option) => (
               <button
                 key={option.id}
                 type="button"
-                role="tab"
                 class={`preview-mode-picker__btn${compareMode === option.id ? ' preview-mode-picker__btn--active' : ''}`}
                 onClick={() => setCompareMode(option.id)}
-                aria-selected={compareMode === option.id}
+                aria-pressed={compareMode === option.id}
               >
                 {option.label}
               </button>
@@ -177,7 +182,7 @@ export function PreviewPane({
 
       <PeakReadout boost={boost} exposure={exposure} />
 
-      <div class="preview-frame">
+      <div class="preview-frame" aria-busy={isBusy}>
         <Compare
           mode={compareMode}
           beforeSrc={image.src}
@@ -187,10 +192,12 @@ export function PreviewPane({
           previewReady={previewReady}
         />
 
-        {(processing || previewPending) && (
+        {isBusy && (
           <div class="processing-overlay">
             <div class="scan-bar" />
-            <span class="processing-text">{processing ? 'Converting' : 'Updating Preview'}</span>
+            <span class="processing-text" aria-live="polite">
+              {busyLabel}
+            </span>
           </div>
         )}
       </div>

@@ -107,6 +107,7 @@ function HeroSlider(props: {
           max={props.max}
           step={props.step}
           value={props.value}
+          aria-valuetext={`${props.display}, ${props.sub}`}
           onInput={(event) => props.onInput(Number((event.target as HTMLInputElement).value))}
         />
       </div>
@@ -231,7 +232,9 @@ export function ConverterControls({
       <div class="fine-tune">{FINE_TUNE_CONTROL_KEYS.map(renderLookControl)}</div>
 
       <div class="preview-note">
-        <span class="preview-note__heading">✦ Preview · {hdrPreviewEnabled ? 'HDR direct' : 'SDR approximation'}</span>
+        <span class="preview-note__heading">
+          <span aria-hidden="true">✦</span> Preview · {hdrPreviewEnabled ? 'HDR direct' : 'SDR approximation'}
+        </span>
         {hdrPreviewEnabled
           ? 'Preview is using converted HDR PNG output on this browser/display.'
           : 'HDR encoded at export. Boost affects final output even if your display can’t render it.'}
@@ -239,7 +242,7 @@ export function ConverterControls({
 
       <div class="btn-row">
         <button type="button" class="btn btn-secondary" onClick={onReset}>
-          ← New image
+          <span aria-hidden="true">←</span> New image
         </button>
         <button
           type="button"
@@ -247,12 +250,14 @@ export function ConverterControls({
           onClick={onConvert}
           disabled={processing}
         >
-          {downloadButtonLabel(processing, downloaded)} ↓
+          {downloadButtonLabel(processing, downloaded)} <span aria-hidden="true">↓</span>
         </button>
       </div>
 
-      <div class="filename">
-        {imageName} · {imageWidth}×{imageHeight}
+      <div class="filename" aria-label={`${imageName}, ${imageWidth} by ${imageHeight} pixels`}>
+        <span aria-hidden="true">
+          {imageName} · {imageWidth}×{imageHeight}
+        </span>
       </div>
     </div>
   )

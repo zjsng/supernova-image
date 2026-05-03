@@ -7,7 +7,7 @@ import { ConverterControls } from '../components/converter-controls'
 import { PreviewPane } from '../components/preview-pane'
 import { PlasmaField } from '../components/plasma-field'
 import { SEO_BASE_URL } from '../lib/seo-routes'
-import { GuideLinksInline, HOME_ROUTE, RouteJsonLd, useSeoRouteHead } from './shared'
+import { HOME_ROUTE, RouteJsonLd, useSeoRouteHead } from './shared'
 
 interface ImageState {
   src: string
@@ -470,21 +470,10 @@ export function Home() {
         )}
 
         {errorMessage && (
-          <div class="error-banner" role="status">
+          <div class="error-banner" role="alert">
             {errorMessage}
           </div>
         )}
-
-        <footer class="privacy-ribbon">
-          <div class="privacy-ribbon__left">
-            <span class="privacy-ribbon__title">Supernova · client-side HDR PNG</span>
-            <span class="privacy-ribbon__tagline">No uploads · no telemetry · no cookies</span>
-          </div>
-          <nav class="privacy-ribbon__guides" aria-label="Popular guides">
-            <span class="privacy-ribbon__guides-label">Guides</span>
-            <GuideLinksInline />
-          </nav>
-        </footer>
 
         <RouteJsonLd
           data={{

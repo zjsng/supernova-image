@@ -73,7 +73,7 @@
 
 .hero-slider__track-wrap {
   position: relative;
-  height: 28px;
+  height: 32px;
 }
 
 .hero-slider__rail {
@@ -103,7 +103,7 @@
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--ink);
   transform: translate(-50%, -50%);
   box-shadow:
     0 0 0 2px var(--accent),
@@ -144,7 +144,7 @@
 
 .slider-row__track-wrap {
   position: relative;
-  height: 22px;
+  height: 28px;
   display: flex;
   align-items: center;
 }
@@ -186,7 +186,7 @@
   background: var(--ink);
   transform: translate(-50%, -50%);
   box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.9),
+    0 0 0 1px oklch(0.96 0.008 75 / 0.9),
     0 0 16px var(--accent);
   transition: box-shadow 120ms ease;
   pointer-events: none;
@@ -194,7 +194,7 @@
 
 .slider-row:hover .slider-row__thumb {
   box-shadow:
-    0 0 0 1px #fff,
+    0 0 0 1px var(--ink),
     0 0 24px var(--accent),
     0 0 48px var(--accent-dim);
 }
@@ -227,7 +227,7 @@
   font-size: 9.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-4);
+  color: var(--ink-text-min);
   line-height: 1.6;
 }
 
